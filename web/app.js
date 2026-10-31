@@ -47,11 +47,17 @@ L.Icon.Default.imagePath = 'https://unpkg.com/leaflet@1.9.4/dist/images/';
   window.__baseMap = 'vworld';
 })();
 
+const placeIcon = L.divIcon({
+  className: 'pin-wrap',
+  html: '<div class="pin-muted"></div>',
+  iconSize: [24, 24],
+  iconAnchor: [12, 22]
+});
 const selectedIcon = L.divIcon({
   className: 'sel-wrap',
   html: '<div class="sel-pin"></div>',
-  iconSize: [28, 28],
-  iconAnchor: [14, 26]
+  iconSize: [42, 42],
+  iconAnchor: [21, 40]
 });
 function countIcon(n) {
   const size = n < 10 ? 'small' : n < 100 ? 'medium' : 'large';
@@ -116,10 +122,11 @@ let pushedDetail = false;
 let pendingScrollPid = null;
 let moveTimer = 0;
 let listRaf = 0;
+const RING = '#7EB6E6';
 const RINGS = [
-  { m: 1000, label: '1km · 도보 15분', color: '#EC4600' },
-  { m: 2000, label: '2km · 자전거 10분', color: '#C46A00' },
-  { m: 3000, label: '3km · 차 5분', color: '#3D7DD6' }
+  { m: 1000, label: '1km · 도보 15분' },
+  { m: 2000, label: '2km · 자전거 10분' },
+  { m: 3000, label: '3km · 차 5분' }
 ];
 const dataReady = Promise.all([
   fetch(Ilteo.BASE + 'data/rent.json').then(r => r.json()),
@@ -164,7 +171,7 @@ function highlightGroup(group) {
   if (!group) return;
   const p = group[0];
   hoverRing = L.circleMarker([Number(p.lat), Number(p.lng)], {
-    radius: 18, color: '#EC4600', weight: 3, fillColor: '#EC4600', fillOpacity: 0.18, interactive: false
+    radius: 16, color: '#5C6B7A', weight: 2, fillColor: '#5C6B7A', fillOpacity: 0.12, interactive: false
   }).addTo(map);
 }
 
@@ -172,7 +179,7 @@ function drawRings(lat, lng) {
   ringLayer.clearLayers();
   RINGS.forEach(s => {
     L.circle([lat, lng], {
-      radius: s.m, color: s.color, weight: 2, fillColor: s.color, fillOpacity: 0.04, interactive: false
+      radius: s.m, color: RING, weight: 2, dashArray: '7 7', fillColor: RING, fillOpacity: 0.05, interactive: false
     }).addTo(ringLayer);
     const latOff = s.m / 111320;
     L.marker([lat + latOff, lng], { icon: ringLabel(esc(s.label)), interactive: false, keyboard: false }).addTo(ringLayer);
@@ -470,8 +477,7 @@ async function load() {
   const ms = [];
   sites.forEach(site => {
     const n = site.groups.length;
-    const markerOpts = { companyCount: n, bubblingMouseEvents: false };
-    if (n > 1) markerOpts.icon = countIcon(n);
+    const markerOpts = { companyCount: n, bubblingMouseEvents: false, icon: n > 1 ? countIcon(n) : placeIcon };
     const marker = L.marker([site.lat, site.lng], markerOpts);
     if (n > 1) marker.bindPopup(sitePopupHtml(site), { autoPan: true, maxWidth: 280, minWidth: 220, className: 'pin-popup' });
     marker.on('click', () => { if (n === 1) selectGroup(site.groups[0]); });
@@ -530,7 +536,7 @@ document.getElementById('area').onclick = () => {
 };
 document.getElementById('me').onclick = () => navigator.geolocation && navigator.geolocation.getCurrentPosition(pos => {
   map.setView([pos.coords.latitude, pos.coords.longitude], 14, { animate: false });
-  L.circleMarker([pos.coords.latitude, pos.coords.longitude], { color: '#EC4600', radius: 6 }).addTo(map);
+  L.circleMarker([pos.coords.latitude, pos.coords.longitude], { color: '#5C6B7A', fillColor: '#8AA0B4', fillOpacity: 0.9, radius: 6 }).addTo(map);
 }, () => alert('위치 권한이 필요합니다'));
 map.on('click', () => {
   if (suppressMapClick) return;
