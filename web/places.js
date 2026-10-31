@@ -2,6 +2,10 @@
    The site is served under /ilteodongne-web/. */
 (function (root) {
   var BASE = '/ilteodongne-web/';
+  var ASSET = '20261031e';
+  function assetUrl(path) {
+    return BASE + path + '?v=' + ASSET;
+  }
   var BAND_RANK = ['원룸', '투룸', '쓰리룸', '85'];
 
   function norm(s) {
@@ -379,6 +383,8 @@
 
   root.Ilteo = {
     BASE: BASE,
+    ASSET: ASSET,
+    assetUrl: assetUrl,
     placeUrl: placeUrl,
     normalizeName: normalizeName,
     coordKey: coordKey,

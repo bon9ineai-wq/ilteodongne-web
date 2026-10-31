@@ -8,6 +8,7 @@ from urllib.parse import urlparse
 BASE = os.environ.get('SITE_URL', 'https://bon9ineai-wq.github.io/ilteodongne-web').rstrip('/')
 prefix = urlparse(BASE).path.rstrip('/')
 ROOT = f'{prefix}/' if prefix else '/'
+ASSET = '20261031e'
 
 # The approved 평택 원룸 월세 post is published. Search indexing stays off site-wide.
 POSTS = [dict(slug='pyeongtaek-oneroom-rent', src='content/pyeongtaek-oneroom-rent.md', draft=False)]
@@ -17,7 +18,7 @@ BLOCKED_PARTS = ('평택_원룸_월세_시세_초안',)
 HEAD = '''<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>{t}</title><meta name="description" content="{d}"><meta name="robots" content="noindex, nofollow"><link rel="canonical" href="{url}">
 <meta property="og:title" content="{t}"><meta property="og:description" content="{d}"><meta property="og:type" content="{ogt}"><meta property="og:url" content="{url}">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css"><link rel="stylesheet" href="{root}app.css"><link rel="stylesheet" href="{root}blog.css"></head><body>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css"><link rel="stylesheet" href="{root}app.css?v={asset}"><link rel="stylesheet" href="{root}blog.css?v={asset}"></head><body>
 <header><a class="logo" href="{root}">일터<b>동네</b></a><nav><a href="{root}">직장 찾기</a><a class="on" href="{root}blog/">동네 이야기</a></nav></header><main class="post">'''
 CTA = '<div class="cta"><b>이 동네 주변엔 어떤 회사가 있을까?</b><p>직종을 고르면 천안·아산·평택 회사·공장을 지도에서 보여드려요.</p><a href="{root}?c=제조/생산">회사 지도 보기 →</a></div>'
 
@@ -58,7 +59,7 @@ def main():
         body = markdown.markdown(re.sub(r'^# .+\n', '', md, count=1, flags=re.M), extensions=['tables'])
         url = f'{BASE}/blog/{slug}/'
         os.makedirs(f'blog/{slug}', exist_ok=True)
-        page = HEAD.format(t=html.escape(title) + ' | 일터동네', d=html.escape(desc), url=url, ogt='article', root=ROOT)
+        page = HEAD.format(t=html.escape(title) + ' | 일터동네', d=html.escape(desc), url=url, ogt='article', root=ROOT, asset=ASSET)
         page += f'<article><h1>{html.escape(title)}</h1>{body}</article>' + CTA.format(root=ROOT) + '</main></body></html>'
         open(f'blog/{slug}/index.html', 'w', encoding='utf-8').write(page)
         items.append((p, title, desc))
@@ -72,6 +73,7 @@ def main():
         url=BASE + '/blog/',
         ogt='website',
         root=ROOT,
+        asset=ASSET,
     )
     blog += f'<h1>동네 이야기</h1><ul class="plist">{li}</ul>' + CTA.format(root=ROOT) + '</main></body></html>'
     open('blog/index.html', 'w', encoding='utf-8').write(blog)

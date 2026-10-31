@@ -132,16 +132,16 @@ details.fac em{color:var(--g);font-style:normal;font-size:13px}
  body.detail-open #sheet.on{position:absolute;inset:0;z-index:2}
 }
 @media(max-width:899px){
- html,body{overflow:hidden;height:100%;height:100dvh;overscroll-behavior:none}
+ html,body{overflow:hidden;height:100vh;height:100dvh;overscroll-behavior:none}
  .ph{padding:4px 12px 8px}
  .ph button{margin-left:4px;padding:4px 8px;font-size:12px}
  .filters{padding:8px 12px 0}
  .filters h1{font-size:18px;margin-bottom:6px}
  .src{display:none}
- #panel{position:absolute;left:0;right:0;bottom:0;z-index:1200;height:46%;height:46dvh;border-radius:16px 16px 0 0;box-shadow:0 -8px 24px rgba(0,0,0,.16);overflow:hidden;overscroll-behavior:none;transition:height .2s ease}
+ #panel{position:absolute;left:0;right:0;bottom:0;z-index:1200;height:46vh;height:46dvh;border-radius:16px 16px 0 0;box-shadow:0 -8px 24px rgba(0,0,0,.16);overflow:hidden;overscroll-behavior:none;transition:height .2s ease}
  #panel[data-stage="peek"]{height:96px}
- #panel[data-stage="half"]{height:46%;height:46dvh}
- #panel[data-stage="full"]{height:88%;height:88dvh}
+ #panel[data-stage="half"]{height:46vh;height:46dvh}
+ #panel[data-stage="full"]{height:88vh;height:88dvh}
  #grab,#listhead{touch-action:none}
  #list{overscroll-behavior:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y}
  #grab{display:block;flex:none;height:22px;cursor:grab}

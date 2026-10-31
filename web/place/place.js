@@ -215,8 +215,8 @@ function addRent(parent, city, address, lat, lng) {
   box.appendChild(el('h2', null, '주변 월세'));
   parent.appendChild(box);
   return Promise.all([
-    fetch(Ilteo.BASE + 'data/rent.json').then(r => { if (!r.ok) throw new Error('rent'); return r.json(); }),
-    fetch(Ilteo.BASE + 'data/umd-points.json').then(r => r.ok ? r.json() : []).catch(() => [])
+    fetch(Ilteo.assetUrl('data/rent.json')).then(r => { if (!r.ok) throw new Error('rent'); return r.json(); }),
+    fetch(Ilteo.assetUrl('data/umd-points.json')).then(r => r.ok ? r.json() : []).catch(() => [])
   ]).then(([rows, points]) => {
     const rent = Ilteo.matchRent(rows, city, address, lat, lng, points);
     if (!rent || !rent.bands.length) {
@@ -322,7 +322,7 @@ async function main() {
 
   let infra = null;
   try {
-    const r = await fetch(Ilteo.BASE + 'data/infra.json');
+    const r = await fetch(Ilteo.assetUrl('data/infra.json'));
     if (!r.ok) throw new Error('infra ' + r.status);
     infra = await r.json();
   } catch (e) {

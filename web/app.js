@@ -180,9 +180,9 @@ const RINGS = [
   { m: 3000, label: '3km · 차 5분' }
 ];
 const dataReady = Promise.all([
-  fetch(Ilteo.BASE + 'data/rent.json').then(r => r.json()),
-  fetch(Ilteo.BASE + 'data/infra.json').then(r => r.json()),
-  fetch(Ilteo.BASE + 'data/umd-points.json').then(r => r.ok ? r.json() : []).catch(() => [])
+  fetch(Ilteo.assetUrl('data/rent.json')).then(r => r.json()),
+  fetch(Ilteo.assetUrl('data/infra.json')).then(r => r.json()),
+  fetch(Ilteo.assetUrl('data/umd-points.json')).then(r => r.ok ? r.json() : []).catch(() => [])
 ]).then(([rent, infra, points]) => { rentRows = rent; infraData = infra; umdPoints = points || []; }).catch(() => {});
 
 function storyFor(p) {
@@ -209,10 +209,24 @@ function toast(msg) {
   clearTimeout(toast._t);
   toast._t = setTimeout(() => el.classList.remove('on'), 1800);
 }
-  function setStage(stage) {
+  function viewportH() {
+  const vv = window.visualViewport;
+  const inner = window.innerHeight || 0;
+  const visual = vv && vv.height ? vv.height : 0;
+  const client = document.documentElement ? document.documentElement.clientHeight : 0;
+  return Math.max(inner, visual, client, 320);
+}
+function sheetPx(stage) {
+  const vh = viewportH();
+  if (stage === 'peek') return 96;
+  if (stage === 'full') return Math.round(vh * 0.88);
+  return Math.round(vh * 0.46);
+}
+function setStage(stage) {
   panel.dataset.stage = stage;
   document.body.dataset.sheet = stage;
-  panel.style.height = '';
+  if (mobile()) panel.style.height = sheetPx(stage) + 'px';
+  else panel.style.height = '';
   if (stage === 'half' || stage === 'full') requestAnimationFrame(() => { renderWindow(); applyPendingScroll(); });
 }
 
@@ -772,68 +786,55 @@ window.addEventListener('keydown', e => {
   const head = document.getElementById('listhead');
   const order = ['peek', 'half', 'full'];
   let dragging = false;
+  let source = null;
   let pointerId = null;
   let startY = 0, startH = 0, lastH = 0, startStage = 'half';
-  let lastMoveY = 0, lastMoveT = 0, velocity = 0;
+  let startOnGrab = false;
   let landStage = null;
 
-  function viewportH() {
-    const vv = window.visualViewport;
-    return (vv && vv.height) || window.innerHeight;
-  }
-  function stageHeights() {
-    const vh = viewportH();
-    return { peek: 96, half: vh * 0.46, full: vh * 0.88 };
-  }
-  function begin(y) {
+  function begin(y, fromGrab) {
     dragging = true;
-    startY = lastMoveY = y;
-    startH = panel.offsetHeight;
+    startOnGrab = !!fromGrab;
+    startY = y;
+    startH = panel.offsetHeight || sheetPx(panel.dataset.stage || 'half');
     lastH = startH;
     startStage = panel.dataset.stage || 'half';
-    lastMoveT = performance.now();
-    velocity = 0;
     panel.style.transition = 'none';
   }
   function dragTo(y) {
     if (!dragging) return;
-    const now = performance.now();
-    const dt = Math.max(8, now - lastMoveT);
-    velocity = (y - lastMoveY) / dt;
-    lastMoveY = y;
-    lastMoveT = now;
-    const maxH = viewportH() * 0.94;
+    const maxH = Math.round(viewportH() * 0.94);
     lastH = Math.max(84, Math.min(maxH, startH + (startY - y)));
     panel.style.height = lastH + 'px';
   }
-  function chooseStage() {
-    const heights = stageHeights();
-    const idx = Math.max(0, order.indexOf(startStage));
-    const lifted = lastH - heights[startStage];
-    if (Math.abs(lifted) < 28) return startStage;
-    if (velocity < -0.35 || lifted > 56) {
-      let target = Math.min(order.length - 1, idx + 1);
-      order.forEach((name, i) => {
-        if (i > idx && lastH >= heights[name] - 28) target = i;
-      });
-      return order[target];
-    }
-    if (velocity > 0.35 || lifted < -56) {
-      let target = Math.max(0, idx - 1);
-      for (let i = idx - 1; i >= 0; i--) {
-        if (lastH <= heights[order[i]] + 28) target = i;
-      }
-      return order[target];
-    }
-    return startStage;
+  function nearestStage(height) {
+    const peek = 96;
+    const half = sheetPx('half');
+    const full = sheetPx('full');
+    const options = [['peek', peek], ['half', half], ['full', full]];
+    let best = 'half', bd = 1e9;
+    options.forEach(([name, h]) => {
+      const d = Math.abs(height - h);
+      if (d < bd) { bd = d; best = name; }
+    });
+    return best;
   }
   function finish() {
     if (!dragging) return;
     dragging = false;
+    source = null;
     pointerId = null;
-    const best = chooseStage();
+    const moved = Math.abs(lastH - startH);
+    let best;
+    if (moved < 14 && startOnGrab) {
+      const i = Math.max(0, order.indexOf(startStage));
+      best = order[(i + 1) % order.length];
+    } else if (moved < 14) {
+      best = startStage;
+    } else {
+      best = nearestStage(lastH);
+    }
     panel.style.transition = '';
-    panel.style.height = '';
     if (selectedPid && best !== 'full' && startStage === 'full') {
       landStage = best;
       requestClose();
@@ -848,49 +849,76 @@ window.addEventListener('keydown', e => {
     prevClose(opts);
     if (stage && mobile()) setStage(stage);
   };
-
   function onHandle(target) {
-    return target && (target.closest('#grab') || target.closest('#listhead')) && !target.closest('button');
+    return !!(target && (target.closest('#grab') || target.closest('#listhead')) && !target.closest('button'));
   }
-  grab.addEventListener('touchstart', e => {
-    if (!mobile() || !e.touches || e.touches.length !== 1) return;
-    if (!onHandle(e.target)) return;
-    begin(e.touches[0].clientY);
-  }, { passive: true });
-  head.addEventListener('touchstart', e => {
-    if (!mobile() || !e.touches || e.touches.length !== 1) return;
-    if (!onHandle(e.target)) return;
-    begin(e.touches[0].clientY);
-  }, { passive: true });
+  function fromGrab(target) {
+    return !!(target && target.closest('#grab'));
+  }
+
+  [grab, head].forEach(el => {
+    el.addEventListener('touchstart', e => {
+      if (!mobile() || !e.touches || e.touches.length !== 1) return;
+      if (!onHandle(e.target)) return;
+      if (source === 'pointer' && Math.abs(lastH - startH) < 8) {
+        source = 'touch';
+        begin(e.touches[0].clientY, fromGrab(e.target));
+        return;
+      }
+      if (source) return;
+      source = 'touch';
+      begin(e.touches[0].clientY, fromGrab(e.target));
+    }, { passive: true });
+    el.addEventListener('pointerdown', e => {
+      if (!mobile() || source) return;
+      if (!onHandle(e.target)) return;
+      source = 'pointer';
+      pointerId = e.pointerId;
+      begin(e.clientY, fromGrab(e.target));
+      try { if (e.currentTarget.setPointerCapture) e.currentTarget.setPointerCapture(e.pointerId); } catch (err) {}
+      if (e.cancelable) e.preventDefault();
+    });
+  });
   document.addEventListener('touchmove', e => {
-    if (!dragging || !e.touches || !e.touches.length) return;
+    if (source !== 'touch' || !dragging || !e.touches || !e.touches.length) return;
     if (e.cancelable) e.preventDefault();
     dragTo(e.touches[0].clientY);
   }, { passive: false });
-  document.addEventListener('touchend', finish);
-  document.addEventListener('touchcancel', finish);
-
-  function onPointerDown(e) {
-    if (!mobile() || e.pointerType === 'touch') return;
-    if (!onHandle(e.target)) return;
-    begin(e.clientY);
-    pointerId = e.pointerId;
-    if (e.currentTarget.setPointerCapture) e.currentTarget.setPointerCapture(e.pointerId);
-  }
-  function onPointerMove(e) {
-    if (!dragging || e.pointerType === 'touch') return;
+  document.addEventListener('touchend', () => { if (source === 'touch') finish(); });
+  document.addEventListener('touchcancel', () => { if (source === 'touch') finish(); });
+  document.addEventListener('pointermove', e => {
+    if (source !== 'pointer' || !dragging) return;
     if (pointerId != null && e.pointerId !== pointerId) return;
+    if (e.cancelable) e.preventDefault();
     dragTo(e.clientY);
-  }
-  [grab, head].forEach(el => {
-    el.addEventListener('pointerdown', onPointerDown);
-    el.addEventListener('pointermove', onPointerMove);
-    el.addEventListener('pointerup', e => { if (e.pointerType !== 'touch') finish(); });
-    el.addEventListener('pointercancel', e => { if (e.pointerType !== 'touch') finish(); });
+  });
+  document.addEventListener('pointerup', e => {
+    if (source !== 'pointer') return;
+    if (pointerId != null && e.pointerId !== pointerId) return;
+    finish();
+  });
+  document.addEventListener('pointercancel', e => {
+    if (source !== 'pointer') return;
+    if (Math.abs(lastH - startH) < 8) {
+      source = null;
+      dragging = false;
+      pointerId = null;
+      return;
+    }
+    finish();
+  });
+  if (window.visualViewport) window.visualViewport.addEventListener('resize', () => {
+    if (!mobile() || dragging) return;
+    setStage(panel.dataset.stage || 'half');
+  });
+  window.addEventListener('resize', () => {
+    if (!mobile() || dragging) return;
+    setStage(panel.dataset.stage || 'half');
   });
 })();
 
-document.body.dataset.sheet = panel.dataset.stage || 'half';
+if (mobile()) setStage(panel.dataset.stage || 'half');
+else document.body.dataset.sheet = panel.dataset.stage || 'half';
 chips('cats', CATS, 'cat');
 chips('cities', CITIES, 'city');
 load();
