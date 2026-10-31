@@ -167,7 +167,6 @@ let pendingRestore = null;
 let rentRows = null;
 let umdPoints = [];
 let infraData = null;
-let suppressMapClick = false;
 let selectionId = 0;
 let pushedDetail = false;
 let pendingScrollPid = null;
@@ -384,8 +383,6 @@ function selectGroup(group, opts) {
   const key = Ilteo.coordKey(p);
   const opening = !selectedPid;
   if (opening && !opts.fromPop && !opts.deep) rememberView();
-  suppressMapClick = true;
-  setTimeout(() => { suppressMapClick = false; }, 400);
   clearInfraFocus();
   if (selectedPin) { map.removeLayer(selectedPin); selectedPin = null; }
   if (hiddenSite) { cl.addLayer(hiddenSite); hiddenSite = null; }
@@ -762,10 +759,6 @@ document.getElementById('me').onclick = () => navigator.geolocation && navigator
   map.setView([pos.coords.latitude, pos.coords.longitude], 14, { animate: false });
   L.circleMarker([pos.coords.latitude, pos.coords.longitude], { color: '#5C6B7A', fillColor: '#8AA0B4', fillOpacity: 0.9, radius: 6 }).addTo(map);
 }, () => alert('위치 권한이 필요합니다'));
-map.on('click', () => {
-  if (suppressMapClick) return;
-  if (document.body.classList.contains('detail-open')) requestClose();
-});
 map.on('moveend', scheduleSync);
 window.addEventListener('popstate', () => {
   const next = history.state;

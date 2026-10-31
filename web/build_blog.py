@@ -8,7 +8,7 @@ from urllib.parse import urlparse
 BASE = os.environ.get('SITE_URL', 'https://bon9ineai-wq.github.io/ilteodongne-web').rstrip('/')
 prefix = urlparse(BASE).path.rstrip('/')
 ROOT = f'{prefix}/' if prefix else '/'
-ASSET = '20261031f'
+ASSET = '20261031g'
 
 # The approved 평택 원룸 월세 post is published. Search indexing stays off site-wide.
 POSTS = [dict(slug='pyeongtaek-oneroom-rent', src='content/pyeongtaek-oneroom-rent.md', draft=False)]

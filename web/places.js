@@ -2,7 +2,7 @@
    The site is served under /ilteodongne-web/. */
 (function (root) {
   var BASE = '/ilteodongne-web/';
-  var ASSET = '20261031f';
+  var ASSET = '20261031g';
   function assetUrl(path) {
     return BASE + path + '?v=' + ASSET;
   }
