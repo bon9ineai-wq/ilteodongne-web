@@ -53,12 +53,14 @@ const placeIcon = L.divIcon({
   iconSize: [24, 24],
   iconAnchor: [12, 22]
 });
-const selectedIcon = L.divIcon({
-  className: 'sel-wrap',
-  html: '<div class="sel-pin"></div>',
-  iconSize: [42, 42],
-  iconAnchor: [21, 40]
-});
+function selectedIconFor(name) {
+  return L.divIcon({
+    className: 'sel-wrap',
+    html: Ilteo.selectedPinHtml(name),
+    iconSize: [42, 42],
+    iconAnchor: [21, 40]
+  });
+}
 function countIcon(n, tip) {
   const size = n < 10 ? 'small' : n < 100 ? 'medium' : 'large';
   const title = tip ? ' title="' + esc(tip) + '"' : '';
@@ -163,6 +165,7 @@ let selectedPid = null;
 let returnView = null;
 let pendingRestore = null;
 let rentRows = null;
+let umdPoints = [];
 let infraData = null;
 let suppressMapClick = false;
 let selectionId = 0;
@@ -178,8 +181,9 @@ const RINGS = [
 ];
 const dataReady = Promise.all([
   fetch(Ilteo.BASE + 'data/rent.json').then(r => r.json()),
-  fetch(Ilteo.BASE + 'data/infra.json').then(r => r.json())
-]).then(([rent, infra]) => { rentRows = rent; infraData = infra; }).catch(() => {});
+  fetch(Ilteo.BASE + 'data/infra.json').then(r => r.json()),
+  fetch(Ilteo.BASE + 'data/umd-points.json').then(r => r.ok ? r.json() : []).catch(() => [])
+]).then(([rent, infra, points]) => { rentRows = rent; infraData = infra; umdPoints = points || []; }).catch(() => {});
 
 function storyFor(p) {
   const blob = (p.city || '') + ' ' + (p.address || '');
@@ -209,7 +213,7 @@ function toast(msg) {
   panel.dataset.stage = stage;
   document.body.dataset.sheet = stage;
   panel.style.height = '';
-  if (stage === 'half') requestAnimationFrame(() => { renderWindow(); applyPendingScroll(); });
+  if (stage === 'half' || stage === 'full') requestAnimationFrame(() => { renderWindow(); applyPendingScroll(); });
 }
 
 function clearHover() {
@@ -314,7 +318,6 @@ function clearSelection(opts) {
   pendingScrollPid = null;
   document.body.classList.remove('detail-open');
   document.getElementById('sheet').classList.remove('on');
-  if (mobile() && panel.dataset.stage === 'full') setStage('half');
   renderWindow();
   if (!opts.fromPop) history.replaceState({ ilteo: 'map' }, '', companyUrl(null));
 }
@@ -383,7 +386,7 @@ function selectGroup(group, opts) {
     hiddenSite = siteMarker;
   }
   selectedPin = L.marker([Number(p.lat), Number(p.lng)], {
-    icon: selectedIcon, zIndexOffset: 1200, interactive: false
+    icon: selectedIconFor(p.name), zIndexOffset: 1200, interactive: false
   }).addTo(map);
   drawRings(Number(p.lat), Number(p.lng));
   if (mobile()) setStage('full');
@@ -460,12 +463,11 @@ function fillContext(group) {
   let rent = null;
   if (!rentRows) rentBox.innerHTML = '<p class="pinmeta">월세 정보를 불러오지 못했습니다.</p>';
   else {
-    rent = Ilteo.matchRent(rentRows, p.city, p.address);
+    rent = Ilteo.matchRent(rentRows, p.city, p.address, p.lat, p.lng, umdPoints);
     if (!rent || !rent.bands.length) rentBox.innerHTML = '<p class="pinmeta">이 지역 월세 집계가 없습니다.</p>';
     else {
       oneroom = rent.bands.filter(b => b.short === '원룸')[0] || null;
-      const note = rent.level === 'city' ? '주소에서 동·읍면을 특정하지 못해 시 전체 값입니다.' :
-        (rent.level === 'eupmyeon' ? '읍·면 안의 리 거래를 합쳤습니다. 월세는 거래건수로 가중했습니다.' : '');
+      const note = Ilteo.rentNote(rent);
       rentBox.innerHTML =
         `<p class="where">${esc(rent.label)} <span class="badge">${levelBadge(rent.level)}</span></p>` +
         '<table class="rent"><thead><tr><th>유형</th><th>보증금</th><th>월세</th><th>거래</th></tr></thead><tbody>' +
@@ -768,40 +770,123 @@ window.addEventListener('keydown', e => {
 (function sheetDrag() {
   const grab = document.getElementById('grab');
   const head = document.getElementById('listhead');
-  let dragging = false, startY = 0, startH = 0, lastH = 0;
-  function down(e) {
-    if (!mobile() || e.target.closest('button')) return;
+  const order = ['peek', 'half', 'full'];
+  let dragging = false;
+  let pointerId = null;
+  let startY = 0, startH = 0, lastH = 0, startStage = 'half';
+  let lastMoveY = 0, lastMoveT = 0, velocity = 0;
+  let landStage = null;
+
+  function viewportH() {
+    const vv = window.visualViewport;
+    return (vv && vv.height) || window.innerHeight;
+  }
+  function stageHeights() {
+    const vh = viewportH();
+    return { peek: 96, half: vh * 0.46, full: vh * 0.88 };
+  }
+  function begin(y) {
     dragging = true;
-    startY = e.clientY;
+    startY = lastMoveY = y;
     startH = panel.offsetHeight;
     lastH = startH;
-    if (e.currentTarget.setPointerCapture) e.currentTarget.setPointerCapture(e.pointerId);
+    startStage = panel.dataset.stage || 'half';
+    lastMoveT = performance.now();
+    velocity = 0;
+    panel.style.transition = 'none';
   }
-  function move(e) {
+  function dragTo(y) {
     if (!dragging) return;
-    lastH = Math.max(84, Math.min(window.innerHeight * 0.92, startH + (startY - e.clientY)));
+    const now = performance.now();
+    const dt = Math.max(8, now - lastMoveT);
+    velocity = (y - lastMoveY) / dt;
+    lastMoveY = y;
+    lastMoveT = now;
+    const maxH = viewportH() * 0.94;
+    lastH = Math.max(84, Math.min(maxH, startH + (startY - y)));
     panel.style.height = lastH + 'px';
   }
-  function up() {
+  function chooseStage() {
+    const heights = stageHeights();
+    const idx = Math.max(0, order.indexOf(startStage));
+    const lifted = lastH - heights[startStage];
+    if (Math.abs(lifted) < 28) return startStage;
+    if (velocity < -0.35 || lifted > 56) {
+      let target = Math.min(order.length - 1, idx + 1);
+      order.forEach((name, i) => {
+        if (i > idx && lastH >= heights[name] - 28) target = i;
+      });
+      return order[target];
+    }
+    if (velocity > 0.35 || lifted < -56) {
+      let target = Math.max(0, idx - 1);
+      for (let i = idx - 1; i >= 0; i--) {
+        if (lastH <= heights[order[i]] + 28) target = i;
+      }
+      return order[target];
+    }
+    return startStage;
+  }
+  function finish() {
     if (!dragging) return;
     dragging = false;
-    const vh = window.innerHeight;
-    const points = [['peek', 96], ['half', vh * 0.46], ['full', vh * 0.88]];
-    let best = 'half', bd = 1e9;
-    points.forEach(([name, h]) => {
-      const d = Math.abs(lastH - h);
-      if (d < bd) { bd = d; best = name; }
-    });
+    pointerId = null;
+    const best = chooseStage();
+    panel.style.transition = '';
     panel.style.height = '';
-    if (best === 'full' && !selectedPid) best = 'half';
-    if (best !== 'full' && selectedPid) requestClose();
-    else setStage(best);
+    if (selectedPid && best !== 'full' && startStage === 'full') {
+      landStage = best;
+      requestClose();
+      return;
+    }
+    setStage(best);
+  }
+  const prevClose = closeDetail;
+  closeDetail = function (opts) {
+    const stage = landStage;
+    landStage = null;
+    prevClose(opts);
+    if (stage && mobile()) setStage(stage);
+  };
+
+  function onHandle(target) {
+    return target && (target.closest('#grab') || target.closest('#listhead')) && !target.closest('button');
+  }
+  grab.addEventListener('touchstart', e => {
+    if (!mobile() || !e.touches || e.touches.length !== 1) return;
+    if (!onHandle(e.target)) return;
+    begin(e.touches[0].clientY);
+  }, { passive: true });
+  head.addEventListener('touchstart', e => {
+    if (!mobile() || !e.touches || e.touches.length !== 1) return;
+    if (!onHandle(e.target)) return;
+    begin(e.touches[0].clientY);
+  }, { passive: true });
+  document.addEventListener('touchmove', e => {
+    if (!dragging || !e.touches || !e.touches.length) return;
+    if (e.cancelable) e.preventDefault();
+    dragTo(e.touches[0].clientY);
+  }, { passive: false });
+  document.addEventListener('touchend', finish);
+  document.addEventListener('touchcancel', finish);
+
+  function onPointerDown(e) {
+    if (!mobile() || e.pointerType === 'touch') return;
+    if (!onHandle(e.target)) return;
+    begin(e.clientY);
+    pointerId = e.pointerId;
+    if (e.currentTarget.setPointerCapture) e.currentTarget.setPointerCapture(e.pointerId);
+  }
+  function onPointerMove(e) {
+    if (!dragging || e.pointerType === 'touch') return;
+    if (pointerId != null && e.pointerId !== pointerId) return;
+    dragTo(e.clientY);
   }
   [grab, head].forEach(el => {
-    el.addEventListener('pointerdown', down);
-    el.addEventListener('pointermove', move);
-    el.addEventListener('pointerup', up);
-    el.addEventListener('pointercancel', up);
+    el.addEventListener('pointerdown', onPointerDown);
+    el.addEventListener('pointermove', onPointerMove);
+    el.addEventListener('pointerup', e => { if (e.pointerType !== 'touch') finish(); });
+    el.addEventListener('pointercancel', e => { if (e.pointerType !== 'touch') finish(); });
   });
 })();
 

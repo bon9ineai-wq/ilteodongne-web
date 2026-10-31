@@ -142,7 +142,61 @@
     return '85㎡ 초과';
   }
 
-  function matchRent(rows, city, address) {
+  function packRent(hits, label, place, level, inferred) {
+    return {
+      label: label,
+      place: place,
+      level: level,
+      inferred: !!inferred,
+      bands: aggregateBands(hits).map(function (b) {
+        b.short = shortBand(b.band);
+        return b;
+      })
+    };
+  }
+
+  function rowsForCity(rows, cityKey) {
+    return rows.filter(function (r) { return r.city === cityKey; });
+  }
+
+  function matchNamed(rows, cityKey, cityLabel, umd, inferred) {
+    var scoped = rowsForCity(rows, cityKey);
+    if (!scoped.length || !umd) return null;
+    var head = umd.split(' ')[0];
+    if (umd.indexOf(' ') !== -1 || /(?:읍|면)$/.test(head)) {
+      var em = scoped.filter(function (r) { return r.umd === head || r.umd.indexOf(head + ' ') === 0; });
+      if (em.length) return packRent(em, cityLabel + ' ' + head, head, 'eupmyeon', inferred);
+      return null;
+    }
+    var exact = scoped.filter(function (r) { return r.umd === umd; });
+    if (exact.length) return packRent(exact, cityLabel + ' ' + umd, umd, 'dong', inferred);
+    return null;
+  }
+
+  function nearestUmd(points, city, address, lat, lng) {
+    if (!points || !points.length) return null;
+    lat = Number(lat);
+    lng = Number(lng);
+    if (!isFinite(lat) || !isFinite(lng)) return null;
+    var parts = adminParts(address);
+    var allow = {};
+    if (city === '천안시') {
+      if (parts.gu) allow['천안시 ' + parts.gu] = 1;
+      else { allow['천안시 동남구'] = 1; allow['천안시 서북구'] = 1; }
+    } else if (city) allow[city] = 1;
+    else return null;
+    var best = null;
+    var bestD = 2000;
+    for (var i = 0; i < points.length; i++) {
+      var p = points[i];
+      if (!allow[p[0]]) continue;
+      var d = haversine(lat, lng, Number(p[2]), Number(p[3]));
+      if (d <= bestD) { bestD = d; best = p; }
+    }
+    return best ? { city: best[0], umd: best[1] } : null;
+  }
+
+  function matchRent(rows, city, address, lat, lng, umdPoints) {
     if (!rows || !rows.length || !city) return null;
     var scoped = scopedRent(rows, city, address);
     if (!scoped.length) return null;
@@ -151,31 +205,47 @@
     var dong = parts.dong.length ? parts.dong[parts.dong.length - 1] : '';
     var ri = parts.ri.length ? parts.ri[parts.ri.length - 1] : '';
     var cityLabel = city === '천안시' && parts.gu ? '천안시 ' + parts.gu : city;
-
-    function pack(hits, place, level) {
-      return { label: cityLabel + ' ' + place, level: level, bands: aggregateBands(hits).map(function (b) {
-        b.short = shortBand(b.band);
-        return b;
-      }) };
-    }
+    var cityKey = city === '천안시' && parts.gu ? '천안시 ' + parts.gu : city;
 
     if (eup && ri) {
       var exactRi = scoped.filter(function (r) { return r.umd === eup + ' ' + ri; });
-      if (exactRi.length) return pack(exactRi, eup + ' ' + ri, 'dong');
+      if (exactRi.length) return packRent(exactRi, cityLabel + ' ' + eup + ' ' + ri, eup + ' ' + ri, 'dong', false);
     }
     if (dong) {
       var exactDong = scoped.filter(function (r) { return r.umd === dong; });
-      if (exactDong.length) return pack(exactDong, dong, 'dong');
+      if (exactDong.length) return packRent(exactDong, cityLabel + ' ' + dong, dong, 'dong', false);
     }
     if (eup) {
       var em = scoped.filter(function (r) { return r.umd === eup || r.umd.indexOf(eup + ' ') === 0; });
-      if (em.length) return pack(em, eup, 'eupmyeon');
+      if (em.length) return packRent(em, cityLabel + ' ' + eup, eup, 'eupmyeon', false);
+    }
+    var near = nearestUmd(umdPoints, city, address, lat, lng);
+    if (near) {
+      var nearLabel = near.city.indexOf('천안시') === 0 ? near.city : cityLabel;
+      var inferred = matchNamed(rows, near.city, nearLabel, near.umd, true);
+      if (inferred) return inferred;
     }
     var whole = city === '천안시' && !parts.gu ? '천안시 전체' : cityLabel + ' 전체';
-    return { label: whole, level: 'city', bands: aggregateBands(scoped).map(function (b) {
-      b.short = shortBand(b.band);
-      return b;
-    }) };
+    return packRent(scoped, whole, whole, 'city', false);
+  }
+
+  function rentNote(rent) {
+    if (!rent) return '';
+    if (rent.level === 'city') {
+      return '이 회사 주소로는 동네를 정확히 알 수 없어 ' + rent.label + ' 평균 월세를 보여드려요.';
+    }
+    if (rent.inferred && rent.place) {
+      return '주소에 동네 이름이 없어 회사 위치 기준으로 ' + rent.place + ' 월세를 보여드려요.';
+    }
+    if (rent.level === 'eupmyeon') {
+      return '읍·면 안의 리 거래를 합쳤습니다. 월세는 거래건수로 가중했습니다.';
+    }
+    return '';
+  }
+
+  function selectedPinHtml(name) {
+    var full = escapeHtml(name || '');
+    return '<div class="sel-stack"><div class="sel-label" title="' + full + '">' + full + '</div><div class="sel-pin"></div></div>';
   }
 
   function haversine(aLat, aLng, bLat, bLng) {
@@ -315,6 +385,8 @@
     groupPlaces: groupPlaces,
     clusterSites: clusterSites,
     matchRent: matchRent,
+    rentNote: rentNote,
+    selectedPinHtml: selectedPinHtml,
     infraSummary: infraSummary,
     placeHours: placeHours,
     formatDistance: formatDistance,

@@ -90,7 +90,7 @@ function addBase(map) {
   vworld.addTo(map);
 }
 
-function drawMap(lat, lng, parts) {
+function drawMap(lat, lng, parts, name) {
   const map = L.map('place-map', { maxZoom: 16, minZoom: 9, zoomAnimation: false });
   addBase(map);
   RINGS.forEach(s => {
@@ -112,7 +112,7 @@ function drawMap(lat, lng, parts) {
   L.marker([lat, lng], {
     zIndexOffset: 800,
     interactive: false,
-    icon: L.divIcon({ className: 'sel-wrap', html: '<div class="sel-pin"></div>', iconSize: [42, 42], iconAnchor: [21, 40] })
+    icon: L.divIcon({ className: 'sel-wrap', html: Ilteo.selectedPinHtml(name), iconSize: [42, 42], iconAnchor: [21, 40] })
   }).addTo(map);
   (parts || []).forEach(part => part.nearest.forEach(s => {
     const marker = L.marker([s.lat, s.lng], {
@@ -210,15 +210,15 @@ function fillInfra(box, list, infra, lat, lng) {
   return parts;
 }
 
-function addRent(parent, city, address) {
+function addRent(parent, city, address, lat, lng) {
   const box = el('section', 'block');
   box.appendChild(el('h2', null, '주변 월세'));
   parent.appendChild(box);
-  return fetch(Ilteo.BASE + 'data/rent.json').then(r => {
-    if (!r.ok) throw new Error('rent');
-    return r.json();
-  }).then(rows => {
-    const rent = Ilteo.matchRent(rows, city, address);
+  return Promise.all([
+    fetch(Ilteo.BASE + 'data/rent.json').then(r => { if (!r.ok) throw new Error('rent'); return r.json(); }),
+    fetch(Ilteo.BASE + 'data/umd-points.json').then(r => r.ok ? r.json() : []).catch(() => [])
+  ]).then(([rows, points]) => {
+    const rent = Ilteo.matchRent(rows, city, address, lat, lng, points);
     if (!rent || !rent.bands.length) {
       box.appendChild(el('p', 'pinmeta', '이 지역 월세 집계가 없습니다.'));
       return;
@@ -237,8 +237,8 @@ function addRent(parent, city, address) {
     });
     table.appendChild(tb);
     box.appendChild(table);
-    if (rent.level === 'city') box.appendChild(el('p', 'pinmeta', '주소에서 동·읍면을 특정하지 못해 시 전체 값입니다.'));
-    if (rent.level === 'eupmyeon') box.appendChild(el('p', 'pinmeta', '읍·면 안의 리 거래를 합쳤습니다. 월세는 거래건수로 가중했습니다.'));
+    const note = Ilteo.rentNote(rent);
+    if (note) box.appendChild(el('p', 'pinmeta', note));
     box.appendChild(el('p', 'src-line', '국토교통부 실거래가 (2025.10~2026.09)'));
   }).catch(() => box.appendChild(el('p', 'pinmeta', '월세 정보를 불러오지 못했습니다.')));
 }
@@ -308,7 +308,7 @@ async function main() {
   grid.appendChild(rest);
   root.appendChild(grid);
 
-  addRent(rest, city, address);
+  addRent(rest, city, address, coords && coords.lat, coords && coords.lng);
   rest.appendChild(infraBox);
   const back = el('a', 'back', '지도로 돌아가기');
   back.href = '/ilteodongne-web/' + (pid ? '?pid=' + encodeURIComponent(pid) : '');
@@ -329,7 +329,7 @@ async function main() {
     infraList.appendChild(el('p', 'pinmeta', '주변 시설을 불러오지 못했습니다.'));
   }
   const parts = infra ? fillInfra(infraBox, infraList, infra, coords.lat, coords.lng) : [];
-  drawMap(coords.lat, coords.lng, parts);
+  drawMap(coords.lat, coords.lng, parts, Ilteo.normalizeName(rec.name));
 }
 
 main();
