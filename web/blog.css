@@ -1,0 +1,6 @@
+.post{max-width:760px;margin:0 auto;padding:16px;line-height:1.7}.post h1{font-size:26px;line-height:1.35}.post h2{font-size:20px;margin-top:28px}
+.post table{border-collapse:collapse;width:100%;font-size:14px;display:block;overflow-x:auto}.post td,.post th{border:1px solid #E6E6E6;padding:6px 8px}.post th{background:#FFF1EA}
+.post blockquote{margin:0;padding:8px 14px;background:#FFF1EA;border-left:3px solid #EC4600}
+.draft{display:inline-block;border:1px solid #EC4600;color:#EC4600;border-radius:999px;padding:2px 12px;font-size:13px}
+.cta{margin:32px 0;padding:20px;border-radius:14px;background:#FFF1EA}.cta p{color:#808080;margin:6px 0 12px}.cta a{display:inline-block;background:#EC4600;color:#fff;border-radius:10px;padding:10px 18px;text-decoration:none;font-weight:600}
+.plist{list-style:none;padding:0}.plist a{display:block;border:1px solid #E6E6E6;border-radius:12px;padding:14px;color:#262626;text-decoration:none}.plist small{display:block;color:#808080;margin-top:6px}

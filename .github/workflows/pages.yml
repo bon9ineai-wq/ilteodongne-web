@@ -1,0 +1,75 @@
+name: Deploy GitHub Pages
+
+on:
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install build dependencies
+        run: pip install -r requirements.txt
+      - name: Build site
+        working-directory: web
+        env:
+          SITE_URL: https://bon9ineai-wq.github.io/ilteodongne-web
+        run: python build_blog.py
+      - name: Assemble Pages artifact
+        run: |
+          set -euo pipefail
+          mkdir -p _site
+          cp web/index.html web/app.css web/app.js web/blog.css web/robots.txt _site/
+          mkdir -p _site/blog
+          cp -a web/blog/. _site/blog/
+          rm -rf _site/blog/pyeongtaek-oneroom-rent
+          rm -f _site/sitemap.xml
+          find _site -iname '*pyeongtaek-oneroom-rent*' -delete
+          find _site -iname '*평택_원룸_월세*' -delete
+          if find _site -iname '*pyeongtaek-oneroom*' -o -iname '*평택*원룸*' | grep -q .; then
+            echo "draft article leaked into the site artifact" >&2
+            exit 1
+          fi
+          if grep -q 'Sitemap:' _site/robots.txt; then
+            echo "robots.txt must not advertise a sitemap" >&2
+            exit 1
+          fi
+          grep -q 'User-agent: \*' _site/robots.txt
+          grep -q 'Disallow: /' _site/robots.txt
+          find _site -name '*.html' -print0 | while IFS= read -r -d '' page; do
+            grep -q '<meta name="robots" content="noindex, nofollow">' "$page" || {
+              echo "missing noindex meta: $page" >&2
+              exit 1
+            }
+          done
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

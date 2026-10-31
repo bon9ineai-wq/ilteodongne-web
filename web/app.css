@@ -1,0 +1,20 @@
+:root{--o:#EC4600;--ol:#FFF1EA;--ink:#262626;--g:#808080;--line:#E6E6E6;--green:#2E9E6A}
+*{box-sizing:border-box}body{margin:0;font-family:Pretendard,system-ui,sans-serif;color:var(--ink);background:#fff}
+header{display:flex;align-items:center;gap:20px;padding:12px 16px;border-bottom:1px solid var(--line);position:sticky;top:0;background:#fff;z-index:1000}
+.logo{font-size:20px;font-weight:700;color:var(--ink);text-decoration:none}.logo b{color:var(--o)}
+nav a{margin-right:14px;color:var(--g);text-decoration:none;font-size:15px;padding-bottom:10px}nav a.on{color:var(--o);font-weight:600;border-bottom:2px solid var(--o)}
+.filters{padding:14px 16px 6px}h1{font-size:22px;margin:0 0 10px}
+.chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:8px;scrollbar-width:none}
+.chips button{flex:none;border:1px solid var(--line);background:#F3F3F3;border-radius:999px;padding:8px 14px;font:inherit;font-size:14px;color:var(--ink);cursor:pointer}
+.chips.small button{background:#fff;padding:6px 12px;font-size:13px}
+.chips button.on{background:var(--o);border-color:var(--o);color:#fff;font-weight:600}
+.body{display:flex;flex-direction:column}#map{height:52vh;border-top:1px solid var(--line)}
+#panel{border-top:1px solid var(--line)}.ph{display:flex;justify-content:space-between;align-items:center;padding:10px 16px;font-weight:600}
+.ph button{border:1px solid var(--o);color:var(--o);background:#fff;border-radius:8px;padding:5px 10px;font:inherit;font-size:13px;margin-left:6px;cursor:pointer}
+#list{list-style:none;margin:0;padding:0 12px 12px}#list li{border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:8px;cursor:pointer}
+#list li:hover{border-color:var(--o)}#list b{font-size:15px}#list small{display:block;color:var(--g);font-size:13px;margin-top:4px}
+.tag{display:inline-block;background:var(--ol);color:var(--o);border-radius:6px;padding:1px 6px;font-size:12px;margin-left:6px}
+.src{color:var(--g);font-size:12px;padding:8px 16px}
+@media(min-width:900px){.body{flex-direction:row;height:calc(100vh - 190px)}#map{flex:1;height:auto}#panel{width:380px;overflow:auto;border-left:1px solid var(--line)}}
+.marker-cluster-small,.marker-cluster-medium,.marker-cluster-large{background:rgba(236,70,0,.25)!important}
+.marker-cluster-small div,.marker-cluster-medium div,.marker-cluster-large div{background:#EC4600!important;color:#fff;font-weight:700}
