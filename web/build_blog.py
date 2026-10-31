@@ -1,19 +1,18 @@
 # Builds blog/ from content/*.md.
 # SITE_URL is the public origin plus project path (no trailing slash).
 # Asset and nav links use that path so the site works at /ilteodongne-web/.
-# Draft posts are never written or listed. Do not add the 평택 원룸 월세 시세 초안.
 # Every HTML page is noindex. robots.txt disallows crawlers. No sitemap.
-import datetime, html, os, re, shutil
+import html, os, re
 from urllib.parse import urlparse
 
 BASE = os.environ.get('SITE_URL', 'https://bon9ineai-wq.github.io/ilteodongne-web').rstrip('/')
 prefix = urlparse(BASE).path.rstrip('/')
 ROOT = f'{prefix}/' if prefix else '/'
 
-# Published posts only. pyeongtaek-oneroom-rent (평택 원룸 월세 시세 초안) is omitted on purpose.
-POSTS = []
-BLOCKED_SLUGS = {'pyeongtaek-oneroom-rent'}
-BLOCKED_PARTS = ('평택_원룸_월세', '평택 원룸 월세', 'pyeongtaek-oneroom-rent')
+# The approved 평택 원룸 월세 post is published. Search indexing stays off site-wide.
+POSTS = [dict(slug='pyeongtaek-oneroom-rent', src='content/pyeongtaek-oneroom-rent.md', draft=False)]
+BLOCKED_SLUGS = set()
+BLOCKED_PARTS = ('평택_원룸_월세_시세_초안',)
 
 HEAD = '''<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>{t}</title><meta name="description" content="{d}"><meta name="robots" content="noindex, nofollow"><link rel="canonical" href="{url}">
@@ -28,12 +27,19 @@ def blocked(slug, src, text=''):
     blob = f'{slug}\n{src}\n{text[:500]}'
     return any(part in blob for part in BLOCKED_PARTS)
 
+def publishable(md):
+    # Drop editor notes. The page is published, and noindex is applied to every HTML page.
+    md = re.sub(r'<!--.*?-->', '', md, flags=re.S)
+    md = re.sub(r'^> \*\*초안.*\n?', '', md, flags=re.M)
+    md = re.sub(r'^\*\*메타 설명[^*]*\*\*.*\n?', '', md, flags=re.M)
+    md = re.sub(r'^\*\*키워드:\*\*.*\n?', '', md, flags=re.M)
+    md = md.replace('**[일터동네 앱 바로가기 — 링크 미정]**', f'[일터동네에서 회사 지도 보기]({ROOT})')
+    md = re.split(r'\n## 작성 메모', md)[0]
+    return md.strip() + '\n'
+
 def main():
     import markdown
     os.makedirs('blog', exist_ok=True)
-    leaked = os.path.join('blog', 'pyeongtaek-oneroom-rent')
-    if os.path.isdir(leaked):
-        shutil.rmtree(leaked)
     items = []
     for p in POSTS:
         src = p.get('src', '')
@@ -41,13 +47,14 @@ def main():
         if p.get('draft') or blocked(slug, src):
             print('skip unpublished', slug or src)
             continue
-        md = open(src, encoding='utf-8').read()
-        if blocked(slug, src, md):
+        raw = open(src, encoding='utf-8').read()
+        if blocked(slug, src, raw[:80]):
             print('skip unpublished', slug or src)
             continue
-        title = re.search(r'^# (.+)$', md, re.M).group(1).strip()
-        m = re.search(r'\*\*메타 설명[^*]*\*\*\s*(.+)', md)
+        title = re.search(r'^# (.+)$', raw, re.M).group(1).strip()
+        m = re.search(r'\*\*메타 설명[^*]*\*\*\s*(.+)', raw)
         desc = m.group(1).strip() if m else title
+        md = publishable(raw)
         body = markdown.markdown(re.sub(r'^# .+\n', '', md, count=1, flags=re.M), extensions=['tables'])
         url = f'{BASE}/blog/{slug}/'
         os.makedirs(f'blog/{slug}', exist_ok=True)

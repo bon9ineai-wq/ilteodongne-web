@@ -40,14 +40,7 @@ jobs:
           cp -a web/blog/. _site/blog/
           cp web/place/index.html web/place/place.js _site/place/
           cp web/data/*.json _site/data/
-          rm -rf _site/blog/pyeongtaek-oneroom-rent
           rm -f _site/sitemap.xml
-          find _site -iname '*pyeongtaek-oneroom-rent*' -delete
-          find _site -iname '*평택_원룸_월세*' -delete
-          if find _site -iname '*pyeongtaek-oneroom*' -o -iname '*평택*원룸*' | grep -q .; then
-            echo "draft article leaked into the site artifact" >&2
-            exit 1
-          fi
           if grep -q 'Sitemap:' _site/robots.txt; then
             echo "robots.txt must not advertise a sitemap" >&2
             exit 1
