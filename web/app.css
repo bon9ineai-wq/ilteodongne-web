@@ -51,6 +51,8 @@ main{flex:1;min-height:0;display:flex;flex-direction:column}
 #sheet-title{font-weight:700;font-size:18px;line-height:1.35}
 #sheet-body{padding:12px 14px 28px;overflow:auto;flex:1}
 #sheet-body a{color:var(--o);font-weight:700}
+#sheet-body .cta-row a,#sheet-body .cta-row button{color:var(--ink)}
+#sheet-body .cta-row a.primary{color:#fff}
 #sheet-body .addr{margin:6px 0 0;font-size:14px}
 .summary{margin:0;padding:10px 12px;background:var(--ol);border-radius:12px;font-weight:700;font-size:14px;line-height:1.45}
 .summary span{font-weight:500;color:var(--g)}
