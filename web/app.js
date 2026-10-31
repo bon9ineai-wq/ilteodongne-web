@@ -10,13 +10,42 @@ let st = {
   bbox: null
 };
 let pendingDeep = qs.get('pid');
-const map = L.map('map', { maxZoom: 16, minZoom: 9, zoomAnimation: false }).setView([36.88, 127.05], 10);
+const map = L.map('map', { maxZoom: 19, minZoom: 9, zoomAnimation: false }).setView([36.88, 127.05], 10);
 window.__map = map;
+window.__baseMap = 'osm';
 L.Icon.Default.imagePath = 'https://unpkg.com/leaflet@1.9.4/dist/images/';
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  maxZoom: 16,
-  attribution: '© OpenStreetMap'
-}).addTo(map);
+(function addBaseMap() {
+  const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '© OpenStreetMap'
+  });
+  const key = String(window.VWORLD_KEY || '').trim();
+  if (!key) {
+    osm.addTo(map);
+    return;
+  }
+  let switched = false;
+  let errors = 0;
+  let loaded = 0;
+  const vworld = L.tileLayer('https://api.vworld.kr/req/wmts/1.0.0/' + encodeURIComponent(key) + '/Base/{z}/{y}/{x}.png', {
+    maxZoom: 19,
+    attribution: '© 국토지리정보원 · 브이월드'
+  });
+  function useOsm() {
+    if (switched) return;
+    switched = true;
+    window.__baseMap = 'osm';
+    if (map.hasLayer(vworld)) map.removeLayer(vworld);
+    if (!map.hasLayer(osm)) osm.addTo(map);
+  }
+  vworld.on('tileload', () => { loaded++; });
+  vworld.on('tileerror', () => {
+    errors++;
+    if (loaded === 0 && errors >= 4) useOsm();
+  });
+  vworld.addTo(map);
+  window.__baseMap = 'vworld';
+})();
 
 const selectedIcon = L.divIcon({
   className: 'sel-wrap',

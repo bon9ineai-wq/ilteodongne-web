@@ -31,11 +31,16 @@ jobs:
         env:
           SITE_URL: https://bon9ineai-wq.github.io/ilteodongne-web
         run: python build_blog.py
+      - name: Apply VWorld key
+        working-directory: web
+        env:
+          VWORLD_API_KEY: ${{ secrets.VWORLD_API_KEY }}
+        run: python3 apply_vworld_key.py
       - name: Assemble Pages artifact
         run: |
           set -euo pipefail
           mkdir -p _site
-          cp web/index.html web/app.css web/app.js web/places.js web/blog.css web/robots.txt _site/
+          cp web/index.html web/app.css web/app.js web/places.js web/vworld-config.js web/blog.css web/robots.txt _site/
           mkdir -p _site/blog _site/place _site/data
           cp -a web/blog/. _site/blog/
           cp web/place/index.html web/place/place.js _site/place/
