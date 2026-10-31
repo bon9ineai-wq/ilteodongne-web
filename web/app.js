@@ -212,12 +212,34 @@ function toast(msg) {
 function clearHover() {
   if (hoverRing) { map.removeLayer(hoverRing); hoverRing = null; }
 }
+function shownLayer(group) {
+  const marker = siteMarkers.get(Ilteo.coordKey(group[0]));
+  if (!marker) return null;
+  const parent = typeof cl.getVisibleParent === 'function' ? cl.getVisibleParent(marker) : null;
+  return parent || marker;
+}
+function insideMap(latlng) {
+  if (!latlng || !Number.isFinite(latlng.lat) || !Number.isFinite(latlng.lng)) return false;
+  if (!map.getBounds().contains(latlng)) return false;
+  const pt = map.latLngToContainerPoint(latlng);
+  const size = map.getSize();
+  return pt.x >= 0 && pt.y >= 0 && pt.x <= size.x && pt.y <= size.y;
+}
 function highlightGroup(group) {
   clearHover();
   if (!group) return;
-  const p = group[0];
-  hoverRing = L.circleMarker([Number(p.lat), Number(p.lng)], {
-    radius: 16, color: '#5C6B7A', weight: 2, fillColor: '#5C6B7A', fillOpacity: 0.12, interactive: false
+  const layer = shownLayer(group);
+  if (!layer || !layer.getLatLng) return;
+  const ll = layer.getLatLng();
+  if (!insideMap(ll)) return;
+  const clustered = layer !== siteMarkers.get(Ilteo.coordKey(group[0]));
+  hoverRing = L.circleMarker(ll, {
+    radius: clustered ? 26 : 14,
+    color: '#5C6B7A',
+    weight: 3,
+    fillColor: '#5C6B7A',
+    fillOpacity: 0.18,
+    interactive: false
   }).addTo(map);
 }
 
@@ -306,7 +328,7 @@ function selectGroup(group, opts) {
   }).addTo(map);
   drawRings(Number(p.lat), Number(p.lng));
   if (mobile()) setStage('full');
-  map.setView([Number(p.lat), Number(p.lng)], SELECT_ZOOM, { animate: false });
+  map.setView([Number(p.lat), Number(p.lng)], Math.max(map.getZoom(), SELECT_ZOOM), { animate: false });
   if (mobile()) {
     const h = panel.offsetHeight || window.innerHeight * 0.88;
     map.panBy([0, Math.round(h * 0.32)], { animate: false });
@@ -456,8 +478,10 @@ function applyPendingScroll() {
 
 function syncViewport() {
   if (!allGroups) return;
-  const b = map.getBounds();
-  visibleGroups = allGroups.filter(g => b.contains(L.latLng(Number(g[0].lat), Number(g[0].lng))));
+  visibleGroups = allGroups.filter(g => {
+    const layer = shownLayer(g);
+    return layer && layer.getLatLng && insideMap(layer.getLatLng());
+  });
   document.getElementById('count').innerHTML = `지도 안 <span style="color:#EC4600">${visibleGroups.length.toLocaleString()}</span>곳`;
   if (!pendingScrollPid) listEl.scrollTop = 0;
   renderWindow();
