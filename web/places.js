@@ -195,6 +195,26 @@
     return (m / 1000).toFixed(1) + 'km';
   }
 
+  // Counts within radius plus the nearest few of each kind, for the detail summary.
+  function infraSummary(infra, lat, lng, radiusM) {
+    var kinds = [
+      ['bus', '버스정류장'],
+      ['convenience', '편의점'],
+      ['pharmacy', '약국'],
+      ['hospital', '의원']
+    ];
+    return kinds.map(function (k) {
+      var pts = (infra && infra[k[0]]) || [];
+      var scored = [];
+      for (var i = 0; i < pts.length; i++) {
+        var d = haversine(lat, lng, pts[i][0], pts[i][1]);
+        if (d <= radiusM) scored.push({ kind: k[0], label: k[1], lat: pts[i][0], lng: pts[i][1], name: pts[i][2] || k[1], d: d });
+      }
+      scored.sort(function (a, b) { return a.d - b.d; });
+      return { kind: k[0], label: k[1], n: scored.length, nearest: scored.slice(0, 3) };
+    });
+  }
+
   root.Ilteo = {
     BASE: BASE,
     placeUrl: placeUrl,
@@ -203,6 +223,7 @@
     clusterSites: clusterSites,
     matchRent: matchRent,
     nearbyInfra: nearbyInfra,
+    infraSummary: infraSummary,
     formatDistance: formatDistance
   };
 })(typeof globalThis !== 'undefined' ? globalThis : this);
