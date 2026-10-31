@@ -429,7 +429,7 @@ function fillContext(group) {
     infraList.innerHTML = '<p class="pinmeta">반경 2km 안에서 찾지 못했습니다.</p>';
     return;
   }
-  infraList.innerHTML = shown.map((part, i) => Ilteo.infraGroupHtml(part, i === 0)).join('')
+  infraList.innerHTML = shown.map(part => Ilteo.infraGroupHtml(part, false)).join('')
     + '<p class="src-line">약국·의료기관: 국립중앙의료원 (공공데이터포털)</p><p class="src-line">버스정류장·편의점: OpenStreetMap</p>';
   const legendInfra = document.querySelector('.legend-infra');
   if (legendInfra) legendInfra.hidden = false;

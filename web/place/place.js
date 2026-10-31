@@ -135,7 +135,7 @@ function fillInfra(box, list, infra, lat, lng) {
   if (!shown.length) {
     list.appendChild(el('p', 'pinmeta', '반경 2km 안에서 찾지 못했습니다.'));
   } else {
-    list.innerHTML = shown.map((part, i) => Ilteo.infraGroupHtml(part, i === 0)).join('');
+    list.innerHTML = shown.map(part => Ilteo.infraGroupHtml(part, false)).join('');
     list.addEventListener('click', e => {
       const more = e.target.closest('.more-infra');
       if (more) {
