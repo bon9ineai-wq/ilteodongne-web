@@ -8,6 +8,20 @@
     return String(s || '').replace(/\s+/g, '').toLowerCase();
   }
 
+  function normalizeName(s) {
+    var t = String(s || '')
+      .replace(/\u00a0/g, ' ')
+      .replace(/\u3000/g, ' ')
+      .replace(/[\t\r\n]+/g, ' ')
+      .replace(/ +/g, ' ')
+      .trim();
+    t = t.replace(/[（(]\s*주\s*[)）]/g, '(주)');
+    t = t.replace(/㈜\s*/g, '(주)');
+    t = t.replace(/주식회사\s+/g, '(주)');
+    t = t.replace(/\(주\)\s+/g, '(주)');
+    return t.replace(/ +/g, ' ').trim();
+  }
+
   function placeUrl(p) {
     var pid = typeof p === 'string' ? p : p.pid;
     var q = new URLSearchParams();
@@ -258,7 +272,7 @@
     groups.push(['health', '보건소', clinics.health]);
     return groups.map(function (g) {
       var scored = collect(g[2], lat, lng, radiusM, g[0], g[1]);
-      return { kind: g[0], label: g[1], n: scored.length, nearest: scored.slice(0, 3) };
+      return { kind: g[0], label: g[1], n: scored.length, nearest: scored.slice(0, 3), items: scored };
     });
   }
 
@@ -267,15 +281,43 @@
     return (m / 1000).toFixed(1) + 'km';
   }
 
+  function escapeHtml(s) {
+    return String(s || '').replace(/[&<>"]/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+    });
+  }
+
+  function infraRowHtml(s) {
+    var badges = (s.badges || []).map(function (b) {
+      var cls = b === '응급실' ? ' em' : b === '야간' ? ' night' : ' weekend';
+      return '<i class="pill' + cls + '">' + escapeHtml(b) + '</i>';
+    }).join('');
+    var hours = s.hoursText
+      ? '<small class="' + (s.open ? 'open' : '') + '">' + escapeHtml(s.hoursText) + (s.open ? ' · 지금 열림' : '') + '</small>'
+      : '';
+    return '<li class="infra-item" data-kind="' + s.kind + '" data-lat="' + s.lat + '" data-lng="' + s.lng + '"><i class="dot infra-' + s.kind + '"></i><span><b>' + escapeHtml(s.name) + '</b>' + hours + badges + '</span><em>' + formatDistance(s.d) + '</em></li>';
+  }
+
+  function infraGroupHtml(part, open) {
+    var preview = (part.items || part.nearest || []).slice(0, 3).map(infraRowHtml).join('');
+    var rest = (part.items || []).slice(3).map(infraRowHtml).join('');
+    var more = part.n > 3
+      ? '<button type="button" class="more-infra" data-n="' + part.n + '">모두 보기 (' + part.n + '곳)</button>'
+      : '';
+    return '<details class="fac"' + (open ? ' open' : '') + '><summary><i class="chev" aria-hidden="true"></i><span>' + escapeHtml(part.label) + ' ' + part.n + '</span></summary><ul>' + preview + '</ul><ul class="infra-rest" hidden>' + rest + '</ul>' + more + '</details>';
+  }
+
   root.Ilteo = {
     BASE: BASE,
     placeUrl: placeUrl,
+    normalizeName: normalizeName,
     coordKey: coordKey,
     groupPlaces: groupPlaces,
     clusterSites: clusterSites,
     matchRent: matchRent,
     infraSummary: infraSummary,
     placeHours: placeHours,
-    formatDistance: formatDistance
+    formatDistance: formatDistance,
+    infraGroupHtml: infraGroupHtml
   };
 })(typeof globalThis !== 'undefined' ? globalThis : this);

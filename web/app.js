@@ -59,10 +59,11 @@ const selectedIcon = L.divIcon({
   iconSize: [42, 42],
   iconAnchor: [21, 40]
 });
-function countIcon(n) {
+function countIcon(n, tip) {
   const size = n < 10 ? 'small' : n < 100 ? 'medium' : 'large';
+  const title = tip ? ' title="' + esc(tip) + '"' : '';
   return L.divIcon({
-    html: '<div><span>' + n + '</span></div>',
+    html: '<div' + title + '><span>' + n + '</span></div>',
     className: 'marker-cluster marker-cluster-' + size,
     iconSize: [40, 40]
   });
@@ -94,10 +95,53 @@ const cl = L.markerClusterGroup({
   iconCreateFunction: function (cluster) {
     let n = 0;
     cluster.getAllChildMarkers().forEach(m => { n += m.options.companyCount || 1; });
-    return countIcon(n);
+    return countIcon(n, '회사 ' + n + '곳 · 눌러서 확대');
   }
 });
 map.addLayer(cl);
+cl.on('clustermouseover', e => {
+  let n = 0;
+  e.layer.getAllChildMarkers().forEach(m => { n += m.options.companyCount || 1; });
+  const tip = '회사 ' + n + '곳 · 눌러서 확대';
+  if (!e.layer.getTooltip()) e.layer.bindTooltip(tip, { direction: 'top', offset: [0, -12] });
+  else e.layer.setTooltipContent(tip);
+  e.layer.openTooltip();
+});
+(function addLegend() {
+  const Legend = L.Control.extend({
+    options: { position: 'bottomleft' },
+    onAdd: function () {
+      const div = L.DomUtil.create('div', 'map-legend');
+      div.innerHTML =
+        '<button type="button" class="legend-toggle" aria-expanded="false">범례</button>' +
+        '<div class="legend-body" hidden>' +
+        '<div class="legend-row"><i class="pin-muted"></i><span>회사 1곳</span></div>' +
+        '<div class="legend-row"><i class="legend-badge"><span>2</span></i><span>근처 회사 묶음 (눌러서 확대)</span></div>' +
+        '<div class="legend-row"><i class="sel-pin"></i><span>선택한 회사</span></div>' +
+        '<div class="legend-row"><i class="legend-ring"></i><span>반경 1·2·3km</span></div>' +
+        '<div class="legend-infra" hidden>' +
+        '<div class="legend-row"><i class="dot infra-bus"></i><span>버스정류장</span></div>' +
+        '<div class="legend-row"><i class="dot infra-convenience"></i><span>편의점</span></div>' +
+        '<div class="legend-row"><i class="dot infra-pharmacy"></i><span>약국</span></div>' +
+        '<div class="legend-row"><i class="dot infra-clinic"></i><span>의원</span></div>' +
+        '<div class="legend-row"><i class="dot infra-dental"></i><span>치과</span></div>' +
+        '<div class="legend-row"><i class="dot infra-korean"></i><span>한의원</span></div>' +
+        '<div class="legend-row"><i class="dot infra-hospital"></i><span>병원</span></div>' +
+        '<div class="legend-row"><i class="dot infra-health"></i><span>보건소</span></div>' +
+        '</div></div>';
+      L.DomEvent.disableClickPropagation(div);
+      L.DomEvent.disableScrollPropagation(div);
+      div.querySelector('.legend-toggle').onclick = () => {
+        const body = div.querySelector('.legend-body');
+        const open = body.hidden;
+        body.hidden = !open;
+        div.querySelector('.legend-toggle').setAttribute('aria-expanded', open ? 'true' : 'false');
+      };
+      return div;
+    }
+  });
+  new Legend().addTo(map);
+})();
 const infraLayer = L.layerGroup().addTo(map);
 const ringLayer = L.layerGroup().addTo(map);
 
@@ -113,6 +157,7 @@ let visibleGroups = [];
 let selectedPin = null;
 let hiddenSite = null;
 let hoverRing = null;
+let infraHighlight = null;
 let selectedPid = null;
 let rentRows = null;
 let infraData = null;
@@ -157,8 +202,9 @@ function toast(msg) {
   clearTimeout(toast._t);
   toast._t = setTimeout(() => el.classList.remove('on'), 1800);
 }
-function setStage(stage) {
+  function setStage(stage) {
   panel.dataset.stage = stage;
+  document.body.dataset.sheet = stage;
   panel.style.height = '';
   if (stage === 'half') requestAnimationFrame(() => { renderWindow(); applyPendingScroll(); });
 }
@@ -192,7 +238,10 @@ function clearSelection(opts) {
   if (hiddenSite) { cl.addLayer(hiddenSite); hiddenSite = null; }
   infraLayer.clearLayers();
   ringLayer.clearLayers();
+  if (infraHighlight) { map.removeLayer(infraHighlight); infraHighlight = null; }
   clearHover();
+  const legendInfra = document.querySelector('.legend-infra');
+  if (legendInfra) legendInfra.hidden = true;
   selectedPid = null;
   document.body.classList.remove('detail-open');
   document.getElementById('sheet').classList.remove('on');
@@ -358,19 +407,15 @@ function fillContext(group) {
     infraList.innerHTML = '<p class="pinmeta">반경 2km 안에서 찾지 못했습니다.</p>';
     return;
   }
-  infraList.innerHTML = shown.map((part, i) =>
-    `<details class="fac"${i === 0 ? ' open' : ''}><summary>${esc(part.label)} ${part.n}</summary><ul>` +
-    part.nearest.map(s => {
-      const badges = (s.badges || []).map(b => `<i class="pill${b === '응급실' ? ' em' : b === '야간' ? ' night' : ' weekend'}">${esc(b)}</i>`).join('');
-      const hours = s.hoursText ? `<small class="${s.open ? 'open' : ''}">${esc(s.hoursText)}${s.open ? ' · 지금 열림' : ''}</small>` : '';
-      return `<li><i class="dot infra-${s.kind}"></i><span><b>${esc(s.name)}</b>${hours}${badges}</span><em>${Ilteo.formatDistance(s.d)}</em></li>`;
-    }).join('') +
-    '</ul></details>'
-  ).join('') + '<p class="src-line">약국·의료기관: 국립중앙의료원 (공공데이터포털)</p><p class="src-line">버스정류장·편의점: OpenStreetMap</p>';
+  infraList.innerHTML = shown.map((part, i) => Ilteo.infraGroupHtml(part, i === 0)).join('')
+    + '<p class="src-line">약국·의료기관: 국립중앙의료원 (공공데이터포털)</p><p class="src-line">버스정류장·편의점: OpenStreetMap</p>';
+  const legendInfra = document.querySelector('.legend-infra');
+  if (legendInfra) legendInfra.hidden = false;
   shown.forEach(part => part.nearest.forEach(s => {
-    L.marker([s.lat, s.lng], { icon: infraIcon(s.kind), interactive: true, keyboard: false })
-      .bindTooltip(s.name + ' · ' + Ilteo.formatDistance(s.d), { direction: 'top', offset: [0, -8] })
-      .addTo(infraLayer);
+    const marker = L.marker([s.lat, s.lng], { icon: infraIcon(s.kind), interactive: true, keyboard: false });
+    marker.bindTooltip(s.name + ' · ' + Ilteo.formatDistance(s.d), { direction: 'top', offset: [0, -8] });
+    marker._infraKey = s.kind + ':' + s.lat + ':' + s.lng;
+    marker.addTo(infraLayer);
   }));
 }
 
@@ -469,6 +514,7 @@ async function load() {
   if (st.bbox) Object.assign(body, st.bbox);
   let rows = await searchPlaces(body);
   rows = rows.filter(p => p.lat > 36.6 && p.lat < 37.2 && p.lng > 126.7 && p.lng < 127.4);
+  rows.forEach(p => { p.name = Ilteo.normalizeName(p.name); });
   const groups = Ilteo.groupPlaces(rows);
   const sites = Ilteo.clusterSites(groups);
   window.__groups = groups;
@@ -481,9 +527,17 @@ async function load() {
   const ms = [];
   sites.forEach(site => {
     const n = site.groups.length;
-    const markerOpts = { companyCount: n, bubblingMouseEvents: false, icon: n > 1 ? countIcon(n) : placeIcon };
+    const markerOpts = {
+      companyCount: n,
+      bubblingMouseEvents: false,
+      icon: n > 1 ? countIcon(n, '회사 ' + n + '곳 · 눌러서 목록') : placeIcon
+    };
     const marker = L.marker([site.lat, site.lng], markerOpts);
-    if (n > 1) marker.bindPopup(sitePopupHtml(site), { autoPan: true, maxWidth: 280, minWidth: 220, className: 'pin-popup' });
+    if (n > 1) {
+      const tip = '회사 ' + n + '곳 · 눌러서 목록';
+      marker.bindTooltip(tip, { direction: 'top', offset: [0, -10] });
+      marker.bindPopup(sitePopupHtml(site), { autoPan: true, maxWidth: 280, minWidth: 220, className: 'pin-popup' });
+    }
     marker.on('click', () => { if (n === 1) selectGroup(site.groups[0]); });
     siteMarkers.set(site.key, marker);
     ms.push(marker);
@@ -532,6 +586,42 @@ listEl.addEventListener('focusin', e => {
 });
 listEl.addEventListener('focusout', () => clearHover());
 
+document.getElementById('sheet-body').addEventListener('click', e => {
+  const more = e.target.closest('.more-infra');
+  if (more) {
+    e.preventDefault();
+    const fac = more.closest('details');
+    const rest = fac.querySelector('.infra-rest');
+    const opening = rest.hidden;
+    rest.hidden = !opening;
+    more.textContent = opening ? '접기' : '모두 보기 (' + more.dataset.n + '곳)';
+    return;
+  }
+  const li = e.target.closest('.infra-item');
+  if (!li) return;
+  document.querySelectorAll('#infra-list .infra-item.on').forEach(el => el.classList.remove('on'));
+  li.classList.add('on');
+  const lat = Number(li.dataset.lat), lng = Number(li.dataset.lng);
+  if (infraHighlight) map.removeLayer(infraHighlight);
+  infraHighlight = L.circleMarker([lat, lng], {
+    radius: 14, color: '#5C6B7A', weight: 3, fillColor: '#5C6B7A', fillOpacity: 0.2, interactive: false
+  }).addTo(map);
+  let found = false;
+  infraLayer.eachLayer(layer => {
+    if (!layer.getLatLng) return;
+    const ll = layer.getLatLng();
+    if (Math.abs(ll.lat - lat) < 1e-4 && Math.abs(ll.lng - lng) < 1e-4) {
+      found = true;
+      if (layer.openTooltip) layer.openTooltip();
+    }
+  });
+  if (!found) {
+    const marker = L.marker([lat, lng], { icon: infraIcon(li.dataset.kind), zIndexOffset: 700 });
+    marker.bindTooltip(li.querySelector('b').textContent, { direction: 'top', offset: [0, -8] });
+    marker.addTo(infraLayer);
+    marker.openTooltip();
+  }
+});
 document.getElementById('sheet-back').onclick = () => requestClose();
 document.getElementById('area').onclick = () => {
   const b = map.getBounds();
@@ -593,6 +683,7 @@ window.addEventListener('popstate', () => {
   });
 })();
 
+document.body.dataset.sheet = panel.dataset.stage || 'half';
 chips('cats', CATS, 'cat');
 chips('cities', CITIES, 'city');
 load();

@@ -3,6 +3,8 @@ const K = 'sb_publishable_8asTfEEJyyDniSAITehVqg_fNAf1Oh7';
 const root = document.getElementById('detail');
 const q = new URLSearchParams(location.search);
 const RING = '#7EB6E6';
+let placeMap = null;
+let placeHighlight = null;
 const RINGS = [
   { m: 1000, label: '1km · 도보 15분' },
   { m: 2000, label: '2km · 자전거 10분' },
@@ -112,13 +114,17 @@ function drawMap(lat, lng, parts) {
     icon: L.divIcon({ className: 'sel-wrap', html: '<div class="sel-pin"></div>', iconSize: [42, 42], iconAnchor: [21, 40] })
   }).addTo(map);
   (parts || []).forEach(part => part.nearest.forEach(s => {
-    L.marker([s.lat, s.lng], {
+    const marker = L.marker([s.lat, s.lng], {
       keyboard: false,
       icon: L.divIcon({ className: 'infra-icon infra-' + s.kind, html: '<span></span>', iconSize: [14, 14], iconAnchor: [7, 7] })
-    }).bindTooltip(s.name + ' · ' + Ilteo.formatDistance(s.d), { direction: 'top', offset: [0, -8] }).addTo(map);
+    });
+    marker._infraKey = s.kind + ':' + s.lat + ':' + s.lng;
+    marker.bindTooltip(s.name + ' · ' + Ilteo.formatDistance(s.d), { direction: 'top', offset: [0, -8] });
+    marker.addTo(map);
   }));
   map.fitBounds(L.latLng(lat, lng).toBounds(6800), { padding: [18, 18], maxZoom: 14, animate: false });
   setTimeout(() => map.invalidateSize(), 60);
+  placeMap = map;
   return map;
 }
 
@@ -127,28 +133,48 @@ function fillInfra(box, list, infra, lat, lng) {
   const shown = parts.filter(part => part.n);
   list.replaceChildren();
   if (!shown.length) {
-    list.appendChild(el('li', 'pinmeta', '반경 2km 안에서 찾지 못했습니다.'));
+    list.appendChild(el('p', 'pinmeta', '반경 2km 안에서 찾지 못했습니다.'));
   } else {
-    shown.forEach(part => {
-      const block = el('details', 'fac');
-      if (part.kind === 'pharmacy' || part.kind === 'bus') block.open = true;
-      block.appendChild(el('summary', null, part.label + ' ' + part.n));
-      const items = el('ul');
-      part.nearest.forEach(s => {
-        const li = el('li');
-        li.appendChild(el('i', 'dot infra-' + s.kind));
-        const span = el('span');
-        span.appendChild(el('b', null, s.name));
-        if (s.hoursText) span.appendChild(el('small', s.open ? 'open' : null, s.hoursText + (s.open ? ' · 지금 열림' : '')));
-        (s.badges || []).forEach(b => {
-          span.appendChild(el('i', 'pill' + (b === '응급실' ? ' em' : b === '야간' ? ' night' : ' weekend'), b));
-        });
-        li.appendChild(span);
-        li.appendChild(el('em', null, Ilteo.formatDistance(s.d)));
-        items.appendChild(li);
+    list.innerHTML = shown.map((part, i) => Ilteo.infraGroupHtml(part, i === 0)).join('');
+    list.addEventListener('click', e => {
+      const more = e.target.closest('.more-infra');
+      if (more) {
+        e.preventDefault();
+        const fac = more.closest('details');
+        const rest = fac.querySelector('.infra-rest');
+        const opening = rest.hidden;
+        rest.hidden = !opening;
+        more.textContent = opening ? '접기' : '모두 보기 (' + more.dataset.n + '곳)';
+        return;
+      }
+      const li = e.target.closest('.infra-item');
+      if (!li || !placeMap) return;
+      list.querySelectorAll('.infra-item.on').forEach(el => el.classList.remove('on'));
+      li.classList.add('on');
+      const lat = Number(li.dataset.lat), lng = Number(li.dataset.lng);
+      if (placeHighlight) placeMap.removeLayer(placeHighlight);
+      placeHighlight = L.circleMarker([lat, lng], {
+        radius: 14, color: '#5C6B7A', weight: 3, fillColor: '#5C6B7A', fillOpacity: 0.2, interactive: false
+      }).addTo(placeMap);
+      let found = false;
+      placeMap.eachLayer(layer => {
+        if (!layer.getLatLng || !layer._infraKey) return;
+        const ll = layer.getLatLng();
+        if (Math.abs(ll.lat - lat) < 1e-4 && Math.abs(ll.lng - lng) < 1e-4) {
+          found = true;
+          layer.openTooltip();
+        }
       });
-      block.appendChild(items);
-      list.appendChild(block);
+      if (!found) {
+        const marker = L.marker([lat, lng], {
+          zIndexOffset: 700,
+          icon: L.divIcon({ className: 'infra-icon infra-' + li.dataset.kind, html: '<span></span>', iconSize: [14, 14], iconAnchor: [7, 7] })
+        });
+        marker._infraKey = li.dataset.kind + ':' + lat + ':' + lng;
+        marker.bindTooltip(li.querySelector('b').textContent, { direction: 'top', offset: [0, -8] });
+        marker.addTo(placeMap);
+        marker.openTooltip();
+      }
     });
   }
   box.appendChild(el('p', 'src-line', '약국·의료기관: 국립중앙의료원 (공공데이터포털)'));
@@ -230,7 +256,7 @@ async function main() {
   mapEl.id = 'place-map';
   mapCol.appendChild(mapEl);
   mainCol.appendChild(el('p', 'kicker', company ? '사업장' : '공장'));
-  mainCol.appendChild(el('h1', null, rec.name));
+  mainCol.appendChild(el('h1', null, Ilteo.normalizeName(rec.name)));
   const kv = el('table', 'kv');
   row(kv, '지역', city);
   row(kv, '주소', address);
