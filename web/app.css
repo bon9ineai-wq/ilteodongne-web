@@ -69,8 +69,8 @@ main{flex:1;min-height:0;display:flex;flex-direction:column}
 #sheet{display:none;flex-direction:column;min-height:0;background:#fff}
 #sheet.on{display:flex}
 .sheet-top{display:flex;gap:10px;align-items:flex-start;padding:12px 14px;border-bottom:1px solid var(--line);position:sticky;top:0;background:#fff;z-index:1;flex:none}
-#sheet-back{flex:none;border:1px solid var(--line);background:#fff;border-radius:8px;padding:8px 12px;min-height:40px;font:inherit;cursor:pointer}
-#sheet-title{font-weight:700;font-size:18px;line-height:1.35}
+#sheet-back{flex:none;border:1px solid #F3C3B0;background:var(--ol);color:var(--o);border-radius:8px;padding:8px 12px;min-height:40px;font:inherit;font-weight:700;white-space:nowrap;cursor:pointer}
+#sheet-title{font-weight:700;font-size:18px;line-height:1.35;min-width:0}
 #sheet-body{padding:12px 14px 28px;overflow:auto;flex:1}
 #sheet-body a{color:var(--o);font-weight:700}
 #sheet-body .cta-row a,#sheet-body .cta-row button{color:var(--ink)}

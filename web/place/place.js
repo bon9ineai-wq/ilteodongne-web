@@ -5,6 +5,7 @@ const q = new URLSearchParams(location.search);
 const RING = '#7EB6E6';
 let placeMap = null;
 let placeHighlight = null;
+let placeFocusMarker = null;
 const RINGS = [
   { m: 1000, label: '1km · 도보 15분' },
   { m: 2000, label: '2km · 자전거 10분' },
@@ -136,6 +137,34 @@ function fillInfra(box, list, infra, lat, lng) {
     list.appendChild(el('p', 'pinmeta', '반경 2km 안에서 찾지 못했습니다.'));
   } else {
     list.innerHTML = shown.map(part => Ilteo.infraGroupHtml(part, false)).join('');
+    function hideTip(layer) {
+      if (!layer || !layer.getTooltip) return;
+      const tip = layer.getTooltip();
+      if (!tip) return;
+      layer.closeTooltip();
+      clearTimeout(tip._removeTimeout);
+      if (tip._container && tip._container.parentNode) tip._container.remove();
+    }
+    function clearPlaceFocus() {
+      if (placeMap) {
+        if (placeFocusMarker) {
+          hideTip(placeFocusMarker);
+          placeMap.removeLayer(placeFocusMarker);
+          placeFocusMarker = null;
+        }
+        placeMap.eachLayer(layer => { if (layer._infraKey) hideTip(layer); });
+        if (placeHighlight) {
+          placeMap.removeLayer(placeHighlight);
+          placeHighlight = null;
+        }
+      }
+      list.querySelectorAll('.infra-item.on').forEach(node => node.classList.remove('on'));
+    }
+    list.querySelectorAll('details.fac').forEach(details => {
+      details.addEventListener('toggle', () => {
+        if (!details.open && details.querySelector('.infra-item.on')) clearPlaceFocus();
+      });
+    });
     list.addEventListener('click', e => {
       const more = e.target.closest('.more-infra');
       if (more) {
@@ -145,35 +174,34 @@ function fillInfra(box, list, infra, lat, lng) {
         const opening = rest.hidden;
         rest.hidden = !opening;
         more.textContent = opening ? '접기' : '모두 보기 (' + more.dataset.n + '곳)';
+        if (!opening && rest.querySelector('.infra-item.on')) clearPlaceFocus();
         return;
       }
       const li = e.target.closest('.infra-item');
       if (!li || !placeMap) return;
-      list.querySelectorAll('.infra-item.on').forEach(el => el.classList.remove('on'));
+      clearPlaceFocus();
       li.classList.add('on');
       const lat = Number(li.dataset.lat), lng = Number(li.dataset.lng);
-      if (placeHighlight) placeMap.removeLayer(placeHighlight);
       placeHighlight = L.circleMarker([lat, lng], {
         radius: 14, color: '#5C6B7A', weight: 3, fillColor: '#5C6B7A', fillOpacity: 0.2, interactive: false
       }).addTo(placeMap);
-      let found = false;
+      let found = null;
       placeMap.eachLayer(layer => {
-        if (!layer.getLatLng || !layer._infraKey) return;
+        if (!layer.getLatLng || !layer._infraKey || found) return;
         const ll = layer.getLatLng();
-        if (Math.abs(ll.lat - lat) < 1e-4 && Math.abs(ll.lng - lng) < 1e-4) {
-          found = true;
-          layer.openTooltip();
-        }
+        if (Math.abs(ll.lat - lat) < 1e-4 && Math.abs(ll.lng - lng) < 1e-4) found = layer;
       });
-      if (!found) {
-        const marker = L.marker([lat, lng], {
+      if (found) {
+        found.openTooltip();
+      } else {
+        placeFocusMarker = L.marker([lat, lng], {
           zIndexOffset: 700,
           icon: L.divIcon({ className: 'infra-icon infra-' + li.dataset.kind, html: '<span></span>', iconSize: [14, 14], iconAnchor: [7, 7] })
         });
-        marker._infraKey = li.dataset.kind + ':' + lat + ':' + lng;
-        marker.bindTooltip(li.querySelector('b').textContent, { direction: 'top', offset: [0, -8] });
-        marker.addTo(placeMap);
-        marker.openTooltip();
+        placeFocusMarker._infraKey = li.dataset.kind + ':' + lat + ':' + lng;
+        placeFocusMarker.bindTooltip(li.querySelector('b').textContent, { direction: 'top', offset: [0, -8] });
+        placeFocusMarker.addTo(placeMap);
+        placeFocusMarker.openTooltip();
       }
     });
   }

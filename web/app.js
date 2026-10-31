@@ -158,7 +158,10 @@ let selectedPin = null;
 let hiddenSite = null;
 let hoverRing = null;
 let infraHighlight = null;
+let infraFocusMarker = null;
 let selectedPid = null;
+let returnView = null;
+let pendingRestore = null;
 let rentRows = null;
 let infraData = null;
 let suppressMapClick = false;
@@ -212,35 +215,78 @@ function toast(msg) {
 function clearHover() {
   if (hoverRing) { map.removeLayer(hoverRing); hoverRing = null; }
 }
+function markerOnMap(layer) {
+  if (!layer || !layer._icon) return false;
+  const mapRect = map.getContainer().getBoundingClientRect();
+  const rect = layer._icon.getBoundingClientRect();
+  if (rect.width < 2 || rect.height < 2) return false;
+  const cx = rect.left + rect.width / 2;
+  const cy = rect.top + rect.height / 2;
+  return cx >= mapRect.left && cy >= mapRect.top && cx <= mapRect.right && cy <= mapRect.bottom;
+}
 function shownLayer(group) {
   const marker = siteMarkers.get(Ilteo.coordKey(group[0]));
+  if (marker && hiddenSite === marker && markerOnMap(selectedPin)) return selectedPin;
   if (!marker) return null;
-  const parent = typeof cl.getVisibleParent === 'function' ? cl.getVisibleParent(marker) : null;
-  return parent || marker;
-}
-function insideMap(latlng) {
-  if (!latlng || !Number.isFinite(latlng.lat) || !Number.isFinite(latlng.lng)) return false;
-  if (!map.getBounds().contains(latlng)) return false;
-  const pt = map.latLngToContainerPoint(latlng);
-  const size = map.getSize();
-  return pt.x >= 0 && pt.y >= 0 && pt.x <= size.x && pt.y <= size.y;
+  const parent = cl.getVisibleParent(marker);
+  if (!markerOnMap(parent)) return null;
+  return parent;
 }
 function highlightGroup(group) {
   clearHover();
   if (!group) return;
   const layer = shownLayer(group);
   if (!layer || !layer.getLatLng) return;
-  const ll = layer.getLatLng();
-  if (!insideMap(ll)) return;
-  const clustered = layer !== siteMarkers.get(Ilteo.coordKey(group[0]));
-  hoverRing = L.circleMarker(ll, {
-    radius: clustered ? 26 : 14,
+  const clustered = typeof layer.getAllChildMarkers === 'function';
+  const badge = !clustered && layer.options && layer.options.companyCount > 1;
+  hoverRing = L.circleMarker(layer.getLatLng(), {
+    radius: clustered ? 26 : badge ? 22 : 14,
     color: '#5C6B7A',
     weight: 3,
     fillColor: '#5C6B7A',
     fillOpacity: 0.18,
     interactive: false
   }).addTo(map);
+}
+function hideTip(layer) {
+  if (!layer || !layer.getTooltip) return;
+  const tip = layer.getTooltip();
+  if (!tip) return;
+  layer.closeTooltip();
+  clearTimeout(tip._removeTimeout);
+  if (tip._container && tip._container.parentNode) tip._container.remove();
+}
+function clearInfraFocus() {
+  if (infraHighlight) { map.removeLayer(infraHighlight); infraHighlight = null; }
+  hideTip(infraFocusMarker);
+  if (infraFocusMarker && infraLayer.hasLayer(infraFocusMarker)) infraLayer.removeLayer(infraFocusMarker);
+  infraFocusMarker = null;
+  infraLayer.eachLayer(hideTip);
+  document.querySelectorAll('#infra-list .infra-item.on').forEach(el => el.classList.remove('on'));
+}
+function rememberView() {
+  if (returnView) return;
+  const c = map.getCenter();
+  returnView = { lat: c.lat, lng: c.lng, zoom: map.getZoom(), scroll: listEl.scrollTop || 0 };
+}
+function restoreView() {
+  const view = returnView;
+  returnView = null;
+  if (!view) return;
+  pendingScrollPid = null;
+  pendingRestore = view;
+  if (map.stop) map.stop();
+  map.setView([view.lat, view.lng], view.zoom, { animate: false });
+  scheduleSync();
+}
+function fitResults() {
+  pendingScrollPid = null;
+  const layers = cl.getLayers();
+  if (!layers.length) return;
+  const bounds = cl.getBounds();
+  if (!bounds.isValid()) return;
+  if (map.stop) map.stop();
+  map.fitBounds(bounds, { padding: [24, 24], maxZoom: 13, animate: false });
 }
 
 function drawRings(lat, lng) {
@@ -256,23 +302,33 @@ function drawRings(lat, lng) {
 
 function clearSelection(opts) {
   opts = opts || {};
+  clearInfraFocus();
   if (selectedPin) { map.removeLayer(selectedPin); selectedPin = null; }
   if (hiddenSite) { cl.addLayer(hiddenSite); hiddenSite = null; }
   infraLayer.clearLayers();
   ringLayer.clearLayers();
-  if (infraHighlight) { map.removeLayer(infraHighlight); infraHighlight = null; }
   clearHover();
   const legendInfra = document.querySelector('.legend-infra');
   if (legendInfra) legendInfra.hidden = true;
   selectedPid = null;
+  pendingScrollPid = null;
   document.body.classList.remove('detail-open');
   document.getElementById('sheet').classList.remove('on');
   if (mobile() && panel.dataset.stage === 'full') setStage('half');
   renderWindow();
-  if (!opts.fromPop) {
-    const u = new URL(companyUrl(null));
-    history.replaceState(history.state, '', u);
+  if (!opts.fromPop) history.replaceState({ ilteo: 'map' }, '', companyUrl(null));
+}
+function closeDetail(opts) {
+  opts = opts || {};
+  const restore = !!opts.restore;
+  clearSelection({ fromPop: !!opts.fromPop });
+  if (!restore) {
+    returnView = null;
+    pendingRestore = null;
+    return;
   }
+  if (returnView) restoreView();
+  else if (!opts.fromPop) fitResults();
 }
 
 function sitePopupHtml(site) {
@@ -302,22 +358,25 @@ map.on('popupopen', e => {
 
 function requestClose() {
   if (pushedDetail) history.back();
-  else clearSelection();
+  else closeDetail({ restore: true });
 }
 
 function selectGroup(group, opts) {
   opts = opts || {};
   const p = group[0];
   const key = Ilteo.coordKey(p);
+  const opening = !selectedPid;
+  if (opening && !opts.fromPop && !opts.deep) rememberView();
   suppressMapClick = true;
   setTimeout(() => { suppressMapClick = false; }, 400);
+  clearInfraFocus();
   if (selectedPin) { map.removeLayer(selectedPin); selectedPin = null; }
   if (hiddenSite) { cl.addLayer(hiddenSite); hiddenSite = null; }
   clearHover();
   map.closePopup();
   if (map.stop) map.stop();
   selectedPid = p.pid;
-  pendingScrollPid = p.pid;
+  pendingScrollPid = opts.fromPop ? null : p.pid;
   const siteMarker = siteMarkers.get(key);
   if (siteMarker) {
     cl.removeLayer(siteMarker);
@@ -335,12 +394,15 @@ function selectGroup(group, opts) {
   }
   renderSheet(group);
   const url = companyUrl(p.pid);
-  if (mobile() && !opts.deep) {
-    if (!pushedDetail) {
-      history.pushState({ ilteo: 'detail', pid: p.pid }, '', url);
-      pushedDetail = true;
-    } else history.replaceState({ ilteo: 'detail', pid: p.pid }, '', url);
-  } else history.replaceState({ ilteo: opts.deep ? 'detail' : 'map' }, '', url);
+  const state = { ilteo: 'detail', pid: p.pid, view: returnView };
+  if (opts.fromPop) pushedDetail = true;
+  else if (opts.deep) {
+    history.replaceState(state, '', url);
+    pushedDetail = false;
+  } else if (opening) {
+    history.pushState(state, '', url);
+    pushedDetail = true;
+  } else history.replaceState(state, '', url);
   scheduleSync();
 }
 
@@ -431,6 +493,11 @@ function fillContext(group) {
   }
   infraList.innerHTML = shown.map(part => Ilteo.infraGroupHtml(part, false)).join('')
     + '<p class="src-line">약국·의료기관: 국립중앙의료원 (공공데이터포털)</p><p class="src-line">버스정류장·편의점: OpenStreetMap</p>';
+  infraList.querySelectorAll('details.fac').forEach(details => {
+    details.addEventListener('toggle', () => {
+      if (!details.open && details.querySelector('.infra-item.on')) clearInfraFocus();
+    });
+  });
   const legendInfra = document.querySelector('.legend-infra');
   if (legendInfra) legendInfra.hidden = false;
   shown.forEach(part => part.nearest.forEach(s => {
@@ -478,11 +545,28 @@ function applyPendingScroll() {
 
 function syncViewport() {
   if (!allGroups) return;
+  const seen = new Map();
   visibleGroups = allGroups.filter(g => {
     const layer = shownLayer(g);
-    return layer && layer.getLatLng && insideMap(layer.getLatLng());
+    if (!layer) return false;
+    if (seen.has(layer)) return seen.get(layer);
+    const ok = markerOnMap(layer);
+    seen.set(layer, ok);
+    return ok;
   });
   document.getElementById('count').innerHTML = `지도 안 <span style="color:#EC4600">${visibleGroups.length.toLocaleString()}</span>곳`;
+  if (pendingRestore) {
+    const view = pendingRestore;
+    if (Math.abs(map.getZoom() - view.zoom) > 0.01) {
+      renderWindow();
+      return;
+    }
+    pendingRestore = null;
+    renderWindow();
+    listEl.scrollTop = view.scroll;
+    renderWindow();
+    return;
+  }
   if (!pendingScrollPid) listEl.scrollTop = 0;
   renderWindow();
   applyPendingScroll();
@@ -530,9 +614,11 @@ async function searchPlaces(body) {
 }
 
 async function load() {
-  clearSelection({ fromPop: true });
+  returnView = null;
+  pendingRestore = null;
   pushedDetail = false;
-  if (!pendingDeep) history.replaceState(history.state, '', companyUrl(null));
+  clearSelection({ fromPop: true });
+  if (!pendingDeep) history.replaceState({ ilteo: 'map' }, '', companyUrl(null));
   document.getElementById('count').textContent = '불러오는 중…';
   const body = { p_category: st.cat, p_city: st.city, p_limit: 5000 };
   if (st.bbox) Object.assign(body, st.bbox);
@@ -619,31 +705,30 @@ document.getElementById('sheet-body').addEventListener('click', e => {
     const opening = rest.hidden;
     rest.hidden = !opening;
     more.textContent = opening ? '접기' : '모두 보기 (' + more.dataset.n + '곳)';
+    if (!opening && rest.querySelector('.infra-item.on')) clearInfraFocus();
     return;
   }
   const li = e.target.closest('.infra-item');
   if (!li) return;
-  document.querySelectorAll('#infra-list .infra-item.on').forEach(el => el.classList.remove('on'));
+  clearInfraFocus();
   li.classList.add('on');
   const lat = Number(li.dataset.lat), lng = Number(li.dataset.lng);
-  if (infraHighlight) map.removeLayer(infraHighlight);
   infraHighlight = L.circleMarker([lat, lng], {
     radius: 14, color: '#5C6B7A', weight: 3, fillColor: '#5C6B7A', fillOpacity: 0.2, interactive: false
   }).addTo(map);
-  let found = false;
+  let found = null;
   infraLayer.eachLayer(layer => {
-    if (!layer.getLatLng) return;
+    if (!layer.getLatLng || found) return;
     const ll = layer.getLatLng();
-    if (Math.abs(ll.lat - lat) < 1e-4 && Math.abs(ll.lng - lng) < 1e-4) {
-      found = true;
-      if (layer.openTooltip) layer.openTooltip();
-    }
+    if (Math.abs(ll.lat - lat) < 1e-4 && Math.abs(ll.lng - lng) < 1e-4) found = layer;
   });
-  if (!found) {
-    const marker = L.marker([lat, lng], { icon: infraIcon(li.dataset.kind), zIndexOffset: 700 });
-    marker.bindTooltip(li.querySelector('b').textContent, { direction: 'top', offset: [0, -8] });
-    marker.addTo(infraLayer);
-    marker.openTooltip();
+  if (found) {
+    if (found.openTooltip) found.openTooltip();
+  } else {
+    infraFocusMarker = L.marker([lat, lng], { icon: infraIcon(li.dataset.kind), zIndexOffset: 700 });
+    infraFocusMarker.bindTooltip(li.querySelector('b').textContent, { direction: 'top', offset: [0, -8] });
+    infraFocusMarker.addTo(infraLayer);
+    infraFocusMarker.openTooltip();
   }
 });
 document.getElementById('sheet-back').onclick = () => requestClose();
@@ -662,9 +747,22 @@ map.on('click', () => {
 });
 map.on('moveend', scheduleSync);
 window.addEventListener('popstate', () => {
+  const next = history.state;
+  if (next && next.ilteo === 'detail' && next.pid && groupByPid.has(next.pid)) {
+    pushedDetail = true;
+    if (next.view) returnView = next.view;
+    selectGroup(groupByPid.get(next.pid), { fromPop: true });
+    return;
+  }
   pushedDetail = false;
-  if (selectedPid) clearSelection({ fromPop: true });
-  if (mobile()) setStage('half');
+  if (selectedPid || returnView) closeDetail({ fromPop: true, restore: true });
+  else if (mobile()) setStage('half');
+});
+window.addEventListener('keydown', e => {
+  if (e.key !== 'Escape' || !selectedPid) return;
+  if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
+  e.preventDefault();
+  requestClose();
 });
 
 (function sheetDrag() {
