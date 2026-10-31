@@ -40,7 +40,7 @@ main{flex:1;min-height:0;display:flex;flex-direction:column}
 .sel-wrap{overflow:visible}
 .sel-stack{position:relative;width:42px;height:42px;overflow:visible}
 .sel-stack .sel-pin{position:absolute;left:4px;top:2px;margin:0}
-.sel-label{position:absolute;left:21px;bottom:46px;transform:translateX(-50%);max-width:168px;padding:3px 8px;background:#fff;color:#262626;border:1px solid #F3C3B0;border-radius:8px;font-size:12px;font-weight:700;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;box-shadow:0 1px 4px rgba(0,0,0,.16);pointer-events:none}
+.sel-label{position:absolute;left:21px;bottom:46px;transform:translateX(-50%);max-width:168px;padding:3px 8px;background:#fff;color:#262626;border:1px solid #F3C3B0;border-radius:8px;font-size:12px;font-weight:700;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;box-shadow:0 1px 4px rgba(0,0,0,.16);pointer-events:auto;cursor:default}
 .pin-muted{width:16px;height:16px;margin:3px 0 0 4px;background:#8AA0B4;border:2px solid #fff;border-radius:50% 50% 50% 0;transform:rotate(-45deg);box-shadow:0 1px 3px rgba(0,0,0,.28)}
 .sel-pin{width:34px;height:34px;margin:2px 0 0 4px;background:#EC4600;border:3px solid #fff;border-radius:50% 50% 50% 0;transform:rotate(-45deg);box-shadow:0 3px 12px rgba(236,70,0,.55)}
 .ring-label span{display:inline-block;background:rgba(255,255,255,.94);border:1px solid #9EC9EE;border-radius:999px;padding:2px 8px;font-size:12px;font-weight:700;color:#5B9BD5;white-space:nowrap;box-shadow:0 1px 3px rgba(0,0,0,.08)}

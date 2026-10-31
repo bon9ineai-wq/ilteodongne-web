@@ -400,8 +400,13 @@ function selectGroup(group, opts) {
     hiddenSite = siteMarker;
   }
   selectedPin = L.marker([Number(p.lat), Number(p.lng)], {
-    icon: selectedIconFor(p.name), zIndexOffset: 1200, interactive: false
+    icon: selectedIconFor(p.name), zIndexOffset: 1200, interactive: true, bubblingMouseEvents: false
   }).addTo(map);
+  const pinEl = selectedPin.getElement();
+  if (pinEl) {
+    L.DomEvent.disableClickPropagation(pinEl);
+    L.DomEvent.on(pinEl, 'click dblclick contextmenu', L.DomEvent.stopPropagation);
+  }
   drawRings(Number(p.lat), Number(p.lng));
   if (mobile()) setStage('full');
   map.setView([Number(p.lat), Number(p.lng)], Math.max(map.getZoom(), SELECT_ZOOM), { animate: false });
