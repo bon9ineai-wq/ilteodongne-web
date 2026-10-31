@@ -10,16 +10,16 @@
 
   function normalizeName(s) {
     var t = String(s || '')
-      .replace(/\u00a0/g, ' ')
-      .replace(/\u3000/g, ' ')
-      .replace(/[\t\r\n]+/g, ' ')
-      .replace(/ +/g, ' ')
+      .replace(/[\u00a0\u3000\u2000-\u200B\uFEFF]/g, ' ')
+      .replace(/\s+/g, ' ')
       .trim();
     t = t.replace(/[（(]\s*주\s*[)）]/g, '(주)');
-    t = t.replace(/㈜\s*/g, '(주)');
-    t = t.replace(/주식회사\s+/g, '(주)');
+    t = t.replace(/㈜/g, '(주)');
+    t = t.replace(/주식회사/g, '(주)');
     t = t.replace(/\(주\)\s+/g, '(주)');
-    return t.replace(/ +/g, ' ').trim();
+    if (/\(주\)$/.test(t) && t.indexOf('(주)') !== 0) t = '(주)' + t.slice(0, -3);
+    t = t.replace(/^(?:\(주\)){2,}/, '(주)');
+    return t.replace(/\s+/g, ' ').trim();
   }
 
   function placeUrl(p) {

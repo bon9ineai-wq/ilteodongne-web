@@ -242,7 +242,7 @@ async function main() {
     showError('사업장을 찾을 수 없습니다.');
     return;
   }
-  document.title = `${rec.name} | 일터동네`;
+  document.title = `${Ilteo.normalizeName(rec.name)} | 일터동네`;
   const city = rec.city || q.get('city') || '';
   const address = rec.address || q.get('address') || '';
   const coords = coordsFromQuery() || coordsFromWkb(rec.location);
