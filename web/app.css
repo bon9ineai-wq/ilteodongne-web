@@ -41,7 +41,11 @@ main{flex:1;min-height:0;display:flex;flex-direction:column}
 .sel-pin{width:34px;height:34px;margin:2px 0 0 4px;background:#EC4600;border:3px solid #fff;border-radius:50% 50% 50% 0;transform:rotate(-45deg);box-shadow:0 3px 12px rgba(236,70,0,.55)}
 .ring-label span{display:inline-block;background:rgba(255,255,255,.94);border:1px solid #9EC9EE;border-radius:999px;padding:2px 8px;font-size:12px;font-weight:700;color:#5B9BD5;white-space:nowrap;box-shadow:0 1px 3px rgba(0,0,0,.08)}
 .infra-icon span{display:block;width:12px;height:12px;border-radius:50%;border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.35)}
-.infra-hospital span{background:#E23B4A}
+.infra-hospital span{background:#8E2F2F}
+.infra-clinic span{background:#E23B4A}
+.infra-dental span{background:#3D7DD6}
+.infra-korean span{background:#C46A00}
+.infra-health span{background:#6B5B95}
 .infra-pharmacy span{background:#2E9E6A}
 .infra-convenience span{background:#EC4600}
 .infra-bus span{background:#3D7DD6}
@@ -74,11 +78,22 @@ details.fac{border-bottom:1px solid var(--line)}
 details.fac summary{cursor:pointer;padding:10px 0;font-weight:600;font-size:14px;list-style:none;display:flex;justify-content:space-between}
 details.fac summary::-webkit-details-marker{display:none}
 details.fac ul{list-style:none;margin:0;padding:0 0 8px}
-details.fac li{display:flex;align-items:center;gap:8px;padding:6px 0;font-size:14px}
-details.fac li span{flex:1}
+details.fac li{display:flex;align-items:flex-start;gap:8px;padding:6px 0;font-size:14px}
+details.fac li span{flex:1;min-width:0}
+details.fac li b{font-weight:600}
+details.fac small{display:block;color:var(--g);font-size:12px;font-weight:500}
+details.fac small.open{color:#1B7A4E;font-weight:700}
+.pill{display:inline-block;margin:4px 4px 0 0;padding:0 6px;border-radius:999px;font-size:11px;font-weight:700;background:#F3F3F3;color:#555;font-style:normal}
+.pill.night{background:#EEF2FF;color:#3949AB}
+.pill.weekend{background:#E8F6EF;color:#1B7A4E}
+.pill.em{background:#FDECEC;color:#C62828}
 details.fac em{color:var(--g);font-style:normal;font-size:13px}
 .dot{width:10px;height:10px;border-radius:50%;flex:none}
-.dot.infra-hospital{background:#E23B4A}
+.dot.infra-hospital{background:#8E2F2F}
+.dot.infra-clinic{background:#E23B4A}
+.dot.infra-dental{background:#3D7DD6}
+.dot.infra-korean{background:#C46A00}
+.dot.infra-health{background:#6B5B95}
 .dot.infra-pharmacy{background:#2E9E6A}
 .dot.infra-convenience{background:#EC4600}
 .dot.infra-bus{background:#3D7DD6}

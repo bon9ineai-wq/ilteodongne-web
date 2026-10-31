@@ -360,9 +360,13 @@ function fillContext(group) {
   }
   infraList.innerHTML = shown.map((part, i) =>
     `<details class="fac"${i === 0 ? ' open' : ''}><summary>${esc(part.label)} ${part.n}</summary><ul>` +
-    part.nearest.map(s => `<li><i class="dot infra-${s.kind}"></i><span>${esc(s.name)}</span><em>${Ilteo.formatDistance(s.d)}</em></li>`).join('') +
+    part.nearest.map(s => {
+      const badges = (s.badges || []).map(b => `<i class="pill${b === '응급실' ? ' em' : b === '야간' ? ' night' : ' weekend'}">${esc(b)}</i>`).join('');
+      const hours = s.hoursText ? `<small class="${s.open ? 'open' : ''}">${esc(s.hoursText)}${s.open ? ' · 지금 열림' : ''}</small>` : '';
+      return `<li><i class="dot infra-${s.kind}"></i><span><b>${esc(s.name)}</b>${hours}${badges}</span><em>${Ilteo.formatDistance(s.d)}</em></li>`;
+    }).join('') +
     '</ul></details>'
-  ).join('') + '<p class="src-line">주변 시설: OpenStreetMap</p>';
+  ).join('') + '<p class="src-line">약국·의료기관: 국립중앙의료원 (공공데이터포털)</p><p class="src-line">버스정류장·편의점: OpenStreetMap</p>';
   shown.forEach(part => part.nearest.forEach(s => {
     L.marker([s.lat, s.lng], { icon: infraIcon(s.kind), interactive: true, keyboard: false })
       .bindTooltip(s.name + ' · ' + Ilteo.formatDistance(s.d), { direction: 'top', offset: [0, -8] })

@@ -63,20 +63,37 @@ function addInfra(lat, lng) {
   box.appendChild(ul);
   root.appendChild(box);
   fetch('/ilteodongne-web/data/infra.json').then(r => r.json()).then(infra => {
-    const spots = Ilteo.nearbyInfra(infra, lat, lng, 2000);
-    if (!spots.length) {
+    const parts = Ilteo.infraSummary(infra, lat, lng, 2000).filter(part => part.n);
+    if (!parts.length) {
       ul.appendChild(el('li', 'pinmeta', '반경 2km 안에서 찾지 못했습니다.'));
       return;
     }
-    spots.forEach(s => {
-      const li = el('li');
-      const dot = el('i', 'dot infra-' + s.kind);
-      li.appendChild(dot);
-      li.appendChild(el('span', null, s.name));
-      li.appendChild(el('em', null, Ilteo.formatDistance(s.d)));
-      ul.appendChild(li);
+    parts.forEach(part => {
+      const block = el('details', 'fac');
+      block.appendChild(el('summary', null, part.label + ' ' + part.n));
+      const items = el('ul');
+      part.nearest.forEach(s => {
+        const li = el('li');
+        li.appendChild(el('i', 'dot infra-' + s.kind));
+        const span = el('span');
+        span.appendChild(el('b', null, s.name));
+        if (s.hoursText) {
+          const small = el('small', s.open ? 'open' : null, s.hoursText + (s.open ? ' · 지금 열림' : ''));
+          span.appendChild(small);
+        }
+        (s.badges || []).forEach(b => {
+          const pill = el('i', 'pill' + (b === '응급실' ? ' em' : b === '야간' ? ' night' : ' weekend'), b);
+          span.appendChild(pill);
+        });
+        li.appendChild(span);
+        li.appendChild(el('em', null, Ilteo.formatDistance(s.d)));
+        items.appendChild(li);
+      });
+      block.appendChild(items);
+      ul.appendChild(block);
     });
-    box.appendChild(el('p', 'src-line', '주변 시설: OpenStreetMap'));
+    box.appendChild(el('p', 'src-line', '약국·의료기관: 국립중앙의료원 (공공데이터포털)'));
+    box.appendChild(el('p', 'src-line', '버스정류장·편의점: OpenStreetMap'));
   }).catch(() => ul.appendChild(el('li', 'pinmeta', '주변 시설을 불러오지 못했습니다.')));
 }
 

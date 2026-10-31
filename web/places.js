@@ -172,47 +172,99 @@
     return 2 * R * Math.asin(Math.min(1, Math.sqrt(s)));
   }
 
-  function nearbyInfra(infra, lat, lng, radiusM) {
-    var limits = { hospital: 3, pharmacy: 4, convenience: 4, bus: 4 };
-    var labels = { hospital: '병원·의원', pharmacy: '약국', convenience: '편의점', bus: '버스정류장' };
+  var CLINIC_GROUP = {
+    '의원': ['clinic', '의원'],
+    '치과의원': ['dental', '치과'],
+    '치과병원': ['dental', '치과'],
+    '한의원': ['korean', '한의원'],
+    '한방병원': ['korean', '한의원'],
+    '병원': ['hospital', '병원'],
+    '요양병원': ['hospital', '병원'],
+    '종합병원': ['hospital', '병원'],
+    '보건소': ['health', '보건소']
+  };
+  var WEEKDAY = { Mon: 'mon', Tue: 'tue', Wed: 'wed', Thu: 'thu', Fri: 'fri', Sat: 'sat', Sun: 'sun' };
+
+  function pointOf(p) {
+    if (Array.isArray(p)) return { lat: p[0], lng: p[1], name: p[2] || '', rec: null };
+    return { lat: p.lat, lng: p.lon, name: p.n || '', rec: p };
+  }
+
+  function seoulClock(now) {
+    var parts = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'Asia/Seoul', weekday: 'short', hour: '2-digit', minute: '2-digit', hourCycle: 'h23'
+    }).formatToParts(now || new Date());
+    var o = {};
+    parts.forEach(function (p) { if (p.type !== 'literal') o[p.type] = p.value; });
+    var hour = o.hour === '24' ? '00' : o.hour;
+    return { day: WEEKDAY[o.weekday] || 'mon', hm: hour + ':' + o.minute };
+  }
+
+  function inSpan(hm, span) {
+    if (!span || !span[0] || !span[1]) return false;
+    if (span[1] > span[0]) return hm >= span[0] && hm < span[1];
+    return hm >= span[0] || hm < span[1];
+  }
+
+  function placeHours(rec, now) {
+    if (!rec || !rec.h) return { text: '', open: false };
+    var clock = seoulClock(now);
+    var span = rec.h[clock.day];
+    if (!span) return { text: '오늘 휴무', open: false };
+    return { text: span[0] + '–' + span[1], open: inSpan(clock.hm, span) };
+  }
+
+  function placeBadges(rec) {
+    if (!rec) return [];
     var out = [];
-    Object.keys(limits).forEach(function (kind) {
-      var pts = (infra && infra[kind]) || [];
-      var scored = [];
-      for (var i = 0; i < pts.length; i++) {
-        var d = haversine(lat, lng, pts[i][0], pts[i][1]);
-        if (d <= radiusM) scored.push({ kind: kind, label: labels[kind], lat: pts[i][0], lng: pts[i][1], name: pts[i][2] || labels[kind], d: d });
-      }
-      scored.sort(function (a, b) { return a.d - b.d; });
-      out.push.apply(out, scored.slice(0, limits[kind]));
-    });
-    out.sort(function (a, b) { return a.d - b.d; });
+    if (rec.night) out.push('야간');
+    if (rec.sat || rec.sun) out.push('주말');
+    if (rec.em) out.push('응급실');
     return out;
+  }
+
+  function collect(pts, lat, lng, radiusM, kind, label) {
+    var scored = [];
+    for (var i = 0; i < pts.length; i++) {
+      var pt = pointOf(pts[i]);
+      var d = haversine(lat, lng, pt.lat, pt.lng);
+      if (d > radiusM) continue;
+      var hours = placeHours(pt.rec);
+      scored.push({
+        kind: kind, label: label, lat: pt.lat, lng: pt.lng, name: pt.name || label, d: d,
+        hoursText: hours.text, open: hours.open, badges: placeBadges(pt.rec)
+      });
+    }
+    scored.sort(function (a, b) { return a.d - b.d; });
+    return scored;
+  }
+
+  function infraSummary(infra, lat, lng, radiusM) {
+    infra = infra || {};
+    var groups = [
+      ['bus', '버스정류장', infra.bus || []],
+      ['convenience', '편의점', infra.convenience || []],
+      ['pharmacy', '약국', infra.pharmacy || []]
+    ];
+    var clinics = { clinic: [], dental: [], korean: [], hospital: [], health: [] };
+    (infra.clinic || []).forEach(function (rec) {
+      var g = CLINIC_GROUP[rec.t];
+      if (g) clinics[g[0]].push(rec);
+    });
+    groups.push(['clinic', '의원', clinics.clinic]);
+    groups.push(['dental', '치과', clinics.dental]);
+    groups.push(['korean', '한의원', clinics.korean]);
+    groups.push(['hospital', '병원', clinics.hospital]);
+    groups.push(['health', '보건소', clinics.health]);
+    return groups.map(function (g) {
+      var scored = collect(g[2], lat, lng, radiusM, g[0], g[1]);
+      return { kind: g[0], label: g[1], n: scored.length, nearest: scored.slice(0, 3) };
+    });
   }
 
   function formatDistance(m) {
     if (m < 1000) return Math.max(1, Math.round(m / 10) * 10) + 'm';
     return (m / 1000).toFixed(1) + 'km';
-  }
-
-  // Counts within radius plus the nearest few of each kind, for the detail summary.
-  function infraSummary(infra, lat, lng, radiusM) {
-    var kinds = [
-      ['bus', '버스정류장'],
-      ['convenience', '편의점'],
-      ['pharmacy', '약국'],
-      ['hospital', '의원']
-    ];
-    return kinds.map(function (k) {
-      var pts = (infra && infra[k[0]]) || [];
-      var scored = [];
-      for (var i = 0; i < pts.length; i++) {
-        var d = haversine(lat, lng, pts[i][0], pts[i][1]);
-        if (d <= radiusM) scored.push({ kind: k[0], label: k[1], lat: pts[i][0], lng: pts[i][1], name: pts[i][2] || k[1], d: d });
-      }
-      scored.sort(function (a, b) { return a.d - b.d; });
-      return { kind: k[0], label: k[1], n: scored.length, nearest: scored.slice(0, 3) };
-    });
   }
 
   root.Ilteo = {
@@ -222,8 +274,8 @@
     groupPlaces: groupPlaces,
     clusterSites: clusterSites,
     matchRent: matchRent,
-    nearbyInfra: nearbyInfra,
     infraSummary: infraSummary,
+    placeHours: placeHours,
     formatDistance: formatDistance
   };
 })(typeof globalThis !== 'undefined' ? globalThis : this);
