@@ -44,6 +44,7 @@ jobs:
           mkdir -p _site/blog _site/place _site/data
           cp -a web/blog/. _site/blog/
           cp web/place/index.html web/place/place.js _site/place/
+          mkdir -p _site/jobs && cp web/jobs/index.html _site/jobs/
           cp web/data/*.json _site/data/
           rm -f _site/sitemap.xml
           if grep -q 'Sitemap:' _site/robots.txt; then

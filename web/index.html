@@ -1,36 +1,61 @@
-<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<title>일터동네 – 직종으로 찾는 천안·아산·평택 회사 지도</title>
-<meta name="description" content="직종을 고르면 천안·아산·평택의 회사와 공장을 지도에서 보여드립니다. 국민연금 가입 사업장·공장등록 데이터 기반.">
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>일터동네 – 회사부터 집, 동네 병원까지 한 번에</title>
+<meta name="description" content="직종을 검색하면 관련 업체 → 동네 → 집 → 인프라로 이어집니다.">
 <meta name="robots" content="noindex, nofollow">
-<link rel="canonical" href="https://bon9ineai-wq.github.io/ilteodongne-web/">
-<meta property="og:title" content="일터동네 – 직종으로 찾는 회사 지도"><meta property="og:description" content="천안·아산·평택 회사·공장을 직종별로 지도에서 찾아보세요."><meta property="og:type" content="website">
-<meta property="og:url" content="https://bon9ineai-wq.github.io/ilteodongne-web/">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css"><link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css">
-<link rel="stylesheet" href="/ilteodongne-web/app.css?v=20261031g"></head><body>
-<header><a class="logo" href="/ilteodongne-web/">일터<b>동네</b></a><nav><a class="on" href="/ilteodongne-web/">직장 찾기</a><a href="/ilteodongne-web/blog/">동네 이야기</a></nav></header>
-<main>
-<section class="filters">
- <h1>어떤 일을 찾으세요?</h1>
- <div class="chips" id="cats"></div>
- <div class="chips small" id="cities"></div>
-</section>
-<div class="body">
- <div id="map"></div>
- <aside id="panel" data-stage="half">
-  <div id="grab" role="separator" aria-label="목록 높이 조절"></div>
-  <div class="ph" id="listhead"><span id="count">불러오는 중…</span><span class="btns"><button id="area" type="button">이 지역 다시 검색</button><button id="me" type="button">내 위치</button></span></div>
-  <ul id="list" role="listbox" aria-label="지도 안 회사"></ul>
-  <div id="sheet"><div class="sheet-top"><button type="button" id="sheet-back">← 이전으로</button><div id="sheet-title"></div></div><div id="sheet-body"></div></div>
- </aside>
+<style>
+:root{--o:#E0531F;--ol:#FDEFE9;--ink:#1f1f1f;--g:#6b6b6b;--line:#e4e4e4}
+*{box-sizing:border-box}i{font-style:normal}body{margin:0;font-family:Pretendard,system-ui,sans-serif;color:var(--ink);background:#fff}
+a{color:inherit;text-decoration:none}
+.wrap{width:858px;max-width:calc(100% - 40px);margin-left:max(20px,calc((100% - 858px)/2 - 21px))}
+header{height:56px;display:flex;align-items:center;padding:0 34px 0 30px;border-bottom:1px solid #eee;background:#fff}
+.logo{font-size:21px;font-weight:800;letter-spacing:-.5px;width:148px}.logo b{color:var(--o);font-weight:800}
+nav{display:flex;height:100%}nav a{display:flex;align-items:center;height:100%;font-size:16px;color:#666;margin-right:58px;border-bottom:3px solid transparent;padding-top:3px}
+nav a.on{color:var(--ink);font-weight:700;border-color:var(--o)}
+.app{margin-left:auto;background:var(--o);color:#fff;font-weight:700;font-size:14px;height:33px;padding:0 30px;border-radius:17px;display:flex;align-items:center}
+.hero{background:var(--ol);padding:24px 0 0;height:238px}
+h1{margin:0;font-size:31px;font-weight:800;letter-spacing:-.6px;line-height:1.3}
+.sub{margin:12px 0 0;font-size:16px;color:var(--g)}
+form{margin-top:26px;height:64px;border:3px solid var(--o);border-radius:32px;background:#fff;display:flex;align-items:center;padding:0 9px 0 26px;width:850px;max-width:100%}
+form svg{flex:none}form label{font-weight:800;font-size:15px;margin:0 9px 0 11px;flex:none}
+form input{border:0;outline:0;font:inherit;font-size:16px;color:var(--ink);min-width:0}form input::placeholder{color:#777}
+#job{flex:1}.div{width:1px;height:34px;background:#ddd;margin:0 12px}
+#region{width:140px}
+form button{margin-left:auto;flex:none;width:136px;height:46px;border:0;border-radius:23px;background:var(--o);color:#fff;font:inherit;font-size:18px;font-weight:800;cursor:pointer}
+.pop{display:flex;align-items:center;margin-top:13px;gap:10px}.pop span{font-size:14px;color:#777;width:85px}
+.pop a{height:36px;padding:0 24px;border:1px solid #ccc;border-radius:18px;background:#fff;font-size:15px;display:flex;align-items:center}
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:21px;margin-top:24px}
+.card{height:111px;border:1px solid var(--line);border-radius:8px;display:flex;align-items:center;padding:0 20px;gap:18px}
+.ic{width:54px;height:54px;border-radius:7px;background:var(--ol);color:var(--o);font-size:22px;font-weight:800;display:flex;align-items:center;justify-content:center;flex:none;margin-top:8px}
+.card b{display:block;font-size:17px;margin-top:-14px}.card small{display:block;font-size:14px;color:var(--g);margin-top:12px;font-size:15px}
+.mh{display:flex;align-items:center;margin-top:28px;gap:30px}.mh h2{margin:0;font-size:17px;font-weight:800}
+.ex{font-size:14px;font-weight:700;color:var(--o);border:1px solid var(--o);background:var(--ol);border-radius:14px;padding:4px 14px}
+.hoods{display:grid;grid-template-columns:repeat(3,1fr);gap:21px;margin:14px 0 40px}
+.hood{height:96px;background:#f3f3f3;border-radius:8px;padding:12px 20px 0}
+.hood .t{display:flex;justify-content:space-between;align-items:center}.hood b{font-size:18px;font-weight:700}
+.badge{background:#e3f3e8;color:#3d9a5c;font-size:14px;font-weight:700;padding:6px 16px;border-radius:5px}
+.hood p{margin:10px 0 0;font-size:15px;color:#555}
+</style></head><body>
+<header><a class="logo" href="/ilteodongne-web/">일터<b>동네</b></a><nav><a class="on" href="/ilteodongne-web/jobs/">직장 찾기</a><a href="#" aria-disabled="true">동네 비교</a><a href="#" aria-disabled="true">집·인프라</a><a href="/ilteodongne-web/blog/">동네 이야기</a></nav><a class="app" href="#" aria-disabled="true">앱 다운로드</a></header>
+<section class="hero"><div class="wrap">
+<h1>회사부터 집, 동네 병원까지 한 번에</h1>
+<p class="sub">직종을 검색하면 관련 업체 → 동네 → 집 → 인프라로 이어집니다</p>
+<form action="/ilteodongne-web/jobs/" method="get">
+<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#1f1f1f" stroke-width="2.2" stroke-linecap="round"><circle cx="10" cy="10" r="7"/><path d="M15.5 15.5L21 21"/></svg>
+<label for="job">직종</label><input id="job" name="job" required placeholder="예: 생산직, 품질관리, 지게차">
+<i class="div"></i><label for="region" style="margin-left:10px">지역</label><input id="region" name="region" placeholder="선택 안 함">
+<button type="submit">검색</button></form>
+<div class="pop"><span>인기 직종</span><a href="/ilteodongne-web/jobs/?job=생산직">생산직</a><a href="/ilteodongne-web/jobs/?job=품질관리">품질관리</a><a href="/ilteodongne-web/jobs/?job=물류·지게차">물류·지게차</a><a href="/ilteodongne-web/jobs/?job=설비보전">설비보전</a><a href="/ilteodongne-web/jobs/?job=사무보조">사무보조</a></div>
+</div></section>
+<main class="wrap">
+<div class="cards">
+<a class="card" href="/ilteodongne-web/jobs/"><i class="ic">직</i><span><b>직장 찾기</b><small>직종으로 근처 업체 보기</small></span></a>
+<a class="card" href="#" aria-disabled="true"><i class="ic">동</i><span><b>동네 비교</b><small>월세·인프라 점수 비교</small></span></a>
+<a class="card" href="#" aria-disabled="true"><i class="ic">집</i><span><b>집·인프라</b><small>회사 근처 매물과 병원</small></span></a>
 </div>
-<p class="src">출처: 국민연금 가입 사업장(2026), 공장등록 현황 · 골프장 제외 · 위치는 주소 기반 추정</p>
-</main>
-<div id="toast" role="status"></div>
-<script src="/ilteodongne-web/vworld-config.js?v=20261031g"></script>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
-<script src="/ilteodongne-web/places.js?v=20261031g"></script>
-<script src="/ilteodongne-web/app.js?v=20261031g"></script></body></html>
+<div class="mh"><h2>많이 본 동네</h2><span class="ex">예시 데이터</span></div>
+<div class="hoods">
+<div class="hood"><div class="t"><b>평택 고덕동</b><span class="badge">인프라 78</span></div><p>원룸 평균 월세 48만 원</p></div>
+<div class="hood"><div class="t"><b>천안 서북구</b><span class="badge">인프라 82</span></div><p>원룸 평균 월세 41만 원</p></div>
+<div class="hood"><div class="t"><b>아산 탕정면</b><span class="badge">인프라 64</span></div><p>원룸 평균 월세 39만 원</p></div>
+</div></main></body></html>

@@ -1,0 +1,36 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<title>일터동네 – 직종으로 찾는 천안·아산·평택 회사 지도</title>
+<meta name="description" content="직종을 고르면 천안·아산·평택의 회사와 공장을 지도에서 보여드립니다. 국민연금 가입 사업장·공장등록 데이터 기반.">
+<meta name="robots" content="noindex, nofollow">
+<link rel="canonical" href="https://bon9ineai-wq.github.io/ilteodongne-web/jobs/">
+<meta property="og:title" content="일터동네 – 직종으로 찾는 회사 지도"><meta property="og:description" content="천안·아산·평택 회사·공장을 직종별로 지도에서 찾아보세요."><meta property="og:type" content="website">
+<meta property="og:url" content="https://bon9ineai-wq.github.io/ilteodongne-web/jobs/">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css"><link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css">
+<link rel="stylesheet" href="/ilteodongne-web/app.css?v=20261031g"></head><body>
+<header><a class="logo" href="/ilteodongne-web/">일터<b>동네</b></a><nav><a class="on" href="/ilteodongne-web/jobs/">직장 찾기</a><a href="/ilteodongne-web/blog/">동네 이야기</a></nav></header>
+<main>
+<section class="filters">
+ <h1>어떤 일을 찾으세요?</h1>
+ <div class="chips" id="cats"></div>
+ <div class="chips small" id="cities"></div>
+</section>
+<div class="body">
+ <div id="map"></div>
+ <aside id="panel" data-stage="half">
+  <div id="grab" role="separator" aria-label="목록 높이 조절"></div>
+  <div class="ph" id="listhead"><span id="count">불러오는 중…</span><span class="btns"><button id="area" type="button">이 지역 다시 검색</button><button id="me" type="button">내 위치</button></span></div>
+  <ul id="list" role="listbox" aria-label="지도 안 회사"></ul>
+  <div id="sheet"><div class="sheet-top"><button type="button" id="sheet-back">← 이전으로</button><div id="sheet-title"></div></div><div id="sheet-body"></div></div>
+ </aside>
+</div>
+<p class="src">출처: 국민연금 가입 사업장(2026), 공장등록 현황 · 골프장 제외 · 위치는 주소 기반 추정</p>
+</main>
+<div id="toast" role="status"></div>
+<script src="/ilteodongne-web/vworld-config.js?v=20261031g"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+<script src="/ilteodongne-web/places.js?v=20261031g"></script>
+<script src="/ilteodongne-web/app.js?v=20261031g"></script></body></html>
