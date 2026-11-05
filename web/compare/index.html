@@ -1,0 +1,109 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>일터동네 – 동네 비교</title>
+<meta name="description" content="직종 관련 업체가 많은 동네를 업체 수·원룸 월세·인프라 점수로 한 줄씩 비교합니다.">
+<meta name="robots" content="noindex, nofollow">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
+<style>
+:root{--o:#E0531F;--ol:#FDEFE9;--ink:#1f1f1f;--g:#6b6b6b;--line:#e4e4e4;--gr:#2e9a55}
+*{box-sizing:border-box}i{font-style:normal}body{margin:0;font-family:Pretendard,system-ui,sans-serif;color:var(--ink);background:#fff}
+a{color:inherit;text-decoration:none}
+header{height:56px;display:flex;align-items:center;padding:0 34px 0 30px;border-bottom:1px solid #eee;background:#fff}
+.logo{font-size:21px;font-weight:800;letter-spacing:-.5px;width:148px}.logo b{color:var(--o);font-weight:800}
+nav{display:flex;height:100%}nav a{display:flex;align-items:center;height:100%;font-size:16px;color:#666;margin-right:58px;border-bottom:3px solid transparent;padding-top:3px}
+nav a.on{color:var(--ink);font-weight:700;border-color:var(--o)}
+.app{margin-left:auto;background:var(--o);color:#fff;font-weight:700;font-size:14px;height:33px;padding:0 30px;border-radius:17px;display:flex;align-items:center}
+.wrap{padding:0 38px 40px}
+.th{display:flex;align-items:center;margin-top:20px;gap:14px}
+h1{margin:0;font-size:25px;font-weight:800;letter-spacing:-.5px;flex:1}
+.ex{font-size:13px;font-weight:700;color:var(--o);border:1px solid var(--o);background:var(--ol);border-radius:14px;padding:4px 12px;white-space:nowrap}
+.seg{display:flex;background:#eee;border-radius:10px;padding:4px;margin-left:24px}
+.seg button{border:0;background:none;font:inherit;font-size:14px;color:#777;height:34px;padding:0 20px;border-radius:7px;cursor:pointer}
+.seg button.on{background:#fff;color:var(--ink);font-weight:800;box-shadow:0 1px 3px rgba(0,0,0,.12)}
+table{width:100%;border-collapse:collapse;margin-top:20px;font-size:16px}
+thead th{background:#f3f3f3;color:#555;font-weight:500;font-size:14px;text-align:left;height:44px;padding:0 14px}
+tbody td{height:66px;padding:0 14px;border-bottom:1px solid #ececec}
+tbody tr{cursor:pointer}tbody tr.sel{background:var(--ol)}tbody tr.sel td:first-child{box-shadow:inset 5px 0 0 var(--o)}
+td.n{font-weight:800}td.r{color:var(--o);font-weight:800}td.na{color:#aaa;font-weight:500}
+.bar{display:inline-block;vertical-align:middle;width:150px;height:8px;border-radius:4px;background:#e6e6e6;margin-right:16px;overflow:hidden}
+.bar i{display:block;height:100%;border-radius:4px;background:#aaa}.hi .bar i{background:var(--gr)}
+.sc{font-weight:800;color:#888}.hi .sc{color:var(--gr)}
+.rd{width:22px;height:22px;border-radius:50%;border:2px solid #bbb;display:inline-block}
+tr.sel .rd{border:6px solid var(--o);background:#fff}
+.src{text-align:right;font-size:12px;color:#777;margin:10px 0 0}
+.card{margin-top:18px;border:1px solid var(--line);border-radius:8px;padding:20px 24px;display:flex;gap:24px;align-items:center}
+.card .h{width:230px;flex:none}.card .h b{font-size:15px}.card .h a{display:block;margin-top:8px;color:var(--o);font-weight:800;font-size:14px;cursor:pointer}
+.items{display:grid;grid-template-columns:repeat(5,1fr);gap:22px;flex:1}
+.it .t{font-size:14px;font-weight:800;display:flex;gap:8px}.it .t span{color:#555;font-weight:600}
+.it .b{height:8px;border-radius:4px;background:#e6e6e6;margin-top:12px;overflow:hidden}.it .b i{display:block;height:100%;background:var(--gr);border-radius:4px}
+.it.lo .b i{background:#aaa}.it small{display:block;font-size:11px;color:#999;margin-top:6px}.it small.e{color:var(--o);font-weight:700}
+.how{display:none;margin-top:10px;font-size:13px;color:#555;background:#f6f6f6;border-radius:8px;padding:12px 16px;line-height:1.7}.how.on{display:block}
+</style></head><body>
+<header><a class="logo" href="/ilteodongne-web/">일터<b>동네</b></a><nav><a id="nj" href="/ilteodongne-web/jobs/">직장 찾기</a><a class="on" href="/ilteodongne-web/compare/">동네 비교</a><a href="#" aria-disabled="true">집·인프라</a><a href="/ilteodongne-web/blog/">동네 이야기</a></nav><a class="app" href="#" aria-disabled="true">앱 다운로드</a></header>
+<main class="wrap">
+<div class="th"><h1 id="title">동네 불러오는 중…</h1><span class="ex">마트·학교는 예시 데이터</span>
+<div class="seg" id="seg"><button type="button" data-k="cnt" class="on">업체 많은순</button><button type="button" data-k="rent">월세 낮은순</button><button type="button" data-k="infra">인프라 높은순</button></div></div>
+<table><thead><tr><th style="width:21%">동네</th><th style="width:13%">관련 업체</th><th style="width:16%">원룸 평균 월세</th><th style="width:30%">인프라 점수</th><th>업체까지 평균</th><th style="width:50px"></th></tr></thead><tbody id="rows"></tbody></table>
+<p class="src">월세: 국토부 실거래가 기준 · 업체: 국민연금 가입 사업장(골프장 제외) · 인프라·거리: 공공 위치 데이터로 계산</p>
+<div class="card" id="card"></div>
+<div class="how" id="how"></div>
+</main>
+<script>
+const U='https://zurfdfqfztydhbmjwyqx.supabase.co',K='sb_publishable_8asTfEEJyyDniSAITehVqg_fNAf1Oh7',B='/ilteodongne-web/';
+const CATS=['제조/생산','건설/공사','물류/운송','의료/요양/복지','IT/연구/기술','도소매/유통','시설관리/환경','사무/전문서비스','음식/숙박','교육','기타'];
+const JOBMAP=[[/생산|품질|설비|조립|용접|가공|도장|검사|오퍼|기계/,'제조/생산'],[/물류|지게차|운송|배송|택배|운전|창고/,'물류/운송'],[/사무|경리|회계|총무|인사/,'사무/전문서비스'],[/건설|공사|현장|목수|전기공/,'건설/공사'],[/요양|간호|의료|복지|간병/,'의료/요양/복지'],[/개발|연구|IT|엔지니어|설계/,'IT/연구/기술'],[/판매|매장|유통|영업/,'도소매/유통'],[/시설|경비|미화|환경|청소/,'시설관리/환경'],[/조리|주방|서빙|호텔|숙박/,'음식/숙박'],[/교사|강사|교육/,'교육']];
+const CITIES=['평택시','천안시','아산시'];
+const qs=new URLSearchParams(location.search);
+const job=(qs.get('job')||'생산직').trim();
+const cat=CATS.includes(qs.get('c'))?qs.get('c'):((JOBMAP.find(([r])=>r.test(job))||[0,CATS.find(c=>c.split('/').some(w=>job.includes(w)))||'제조/생산'])[1]);
+const reg=(qs.get('region')||'').replace(/\s/g,'');
+const cities=CITIES.filter(c=>reg&&(c.includes(reg)||reg.includes(c.slice(0,2))));
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const R=2.0; // 인프라 반경 km
+$('nj').href=B+'jobs/?'+new URLSearchParams({job,...(reg?{region:reg}:{})});
+function km(a,b,c,d){const r=Math.PI/180,x=(d-b)*r*Math.cos((a+c)/2*r),y=(c-a)*r;return 6371*Math.hypot(x,y)}
+function loc(p){const a=String(p.address||'').split(/\s+/);const i=a.indexOf(p.city);if(i<0)return null;let city=p.city,k=i+1;if(/구$/.test(a[k]||'')){city=p.city+' '+a[k];k++}const d=a[k]||'';return /[읍면동]$/.test(d)?{city,umd:d}:null}
+async function fetchCat(c,out,seen){for(let off=0;off<5000;off+=1000){const r=await fetch(`${U}/rest/v1/rpc/search_places?offset=${off}&limit=1000`,{method:'POST',headers:{apikey:K,'Content-Type':'application/json'},body:JSON.stringify({p_category:c,p_city:null,p_limit:5000})});const d=await r.json();if(!Array.isArray(d)||!d.length)break;let n=0;for(const p of d){if(!p||seen.has(p.pid))continue;seen.add(p.pid);out.push(p);n++}if(!n||d.length<1000)break}}
+const ex=(s,lo,hi)=>{let h=0;for(const c of s)h=(h*31+c.charCodeAt(0))>>>0;return lo+h%(hi-lo+1)};
+let rows=[],sort='cnt',sel=0;
+async function main(){
+ const [map,rent,infra,pts]=await Promise.all(['job_industries','rent','infra','umd-points'].map(f=>fetch(B+'data/'+f+'.json?v=20261105').then(r=>r.json())));
+ const M=map[job]||null;const out=[],seen=new Set();for(const c of (M?M.categories:[cat]))await fetchCat(c,out,seen);
+ const set=M?new Set(M.industries):null;
+ for(const k of ['clinic','bus','convenience'])infra[k]=infra[k].map(q=>Array.isArray(q)?q:[q.lat,q.lon]).filter(q=>q[0]&&q[1]);
+ const cos=out.filter(p=>(!set||set.has(p.industry))&&!/골프/.test((p.name||'')+(p.industry||''))&&p.lat>36.6&&p.lat<37.2&&(!cities.length||cities.includes(p.city)));
+ const g=new Map();cos.forEach(p=>{const l=loc(p);if(!l)return;const k=l.city+'|'+l.umd;if(!g.has(k))g.set(k,{...l,list:[]});g.get(k).list.push(p)});
+ const P=new Map();pts.forEach(([c,u,la,ln])=>{if(!P.has(c+'|'+u))P.set(c+'|'+u,[la,ln])}); // 읍면동 첫 지점 = 대표 지점
+ let cand=[...g.values()].filter(d=>P.has(d.city+'|'+d.umd)).sort((a,b)=>b.list.length-a.list.length).slice(0,4);
+ const cnt=(arr,la,ln)=>arr.reduce((s,q)=>s+(km(la,ln,q[0],q[1])<=R?1:0),0);
+ // 기준값: 후보 + 전체 읍면동 대표 지점의 90번째 백분위
+ const sample=pts.filter((_,i)=>i%6===0);const ref={};
+ for(const k of ['clinic','bus','convenience']){const v=sample.map(([,,la,ln])=>cnt(infra[k],la,ln)).sort((a,b)=>a-b);ref[k]=Math.max(1,v[Math.floor(v.length*.8)])}
+ rows=cand.map(d=>{const [la,ln]=P.get(d.city+'|'+d.umd);
+  const rr=rent.filter(x=>x.city===d.city&&x.umd.split(' ')[0]===d.umd&&x.band.startsWith('원룸'));const n=rr.reduce((s,x)=>s+x.n,0);
+  const rv=n?Math.round(rr.reduce((s,x)=>s+x.rent*x.n,0)/n):null;
+  const c={clinic:cnt(infra.clinic,la,ln),bus:cnt(infra.bus,la,ln),convenience:cnt(infra.convenience,la,ln)};
+  const sc=k=>Math.min(100,Math.round(100*c[k]/ref[k]));
+  const items=[['병원',sc('clinic'),`반경 2km ${c.clinic}곳`],['마트',ex(d.umd+'m',55,85),null],['대중교통',sc('bus'),`정류장 ${c.bus}곳`],['편의점',sc('convenience'),`${c.convenience}곳`],['학교·보육',ex(d.umd+'s',55,85),null]];
+  const infraScore=Math.round((sc('clinic')+sc('bus')+sc('convenience'))/3);
+  const ds=d.list.map(p=>km(la,ln,p.lat,p.lng)).sort((a,b)=>a-b);const avg=ds.reduce((s,x)=>s+x,0)/ds.length;
+  const min=Math.max(3,Math.round(avg*1.3/30*60+3));
+  return {name:d.city.replace(/시( |$)/,' ').split(' ')[0]+' '+d.umd,city:d.city,umd:d.umd,n:d.list.length,rent:rv,rentN:n,infra:infraScore,items,min,avg,c};
+ });
+ render();
+}
+function render(){
+ const r=[...rows].sort(sort==='cnt'?(a,b)=>b.n-a.n:sort==='rent'?(a,b)=>(a.rent??999)-(b.rent??999):(a,b)=>b.infra-a.infra);
+ $('title').textContent=`${job} 업체가 많은 동네 ${r.length} 곳`;
+ if(!r.length){$('rows').innerHTML='<tr><td colspan="6" class="na">조건에 맞는 동네가 없어요.</td></tr>';$('card').style.display='none';return}
+ sel=Math.min(sel,r.length-1);const top=Math.max(...r.map(x=>x.infra));
+ $('rows').innerHTML=r.map((x,i)=>`<tr class="${i===sel?'sel':''} ${x.infra>=70?'hi':''}" data-i="${i}"><td class="n">${esc(x.name)}</td><td>${x.n} 곳</td>${x.rent!=null?`<td class="r">${x.rent} 만 원</td>`:'<td class="na">거래 자료 없음</td>'}<td><span class="bar"><i style="width:${x.infra}%"></i></span><span class="sc">${x.infra}</span></td><td>차 ${x.min} 분</td><td><span class="rd"></span></td></tr>`).join('');
+ $('rows').querySelectorAll('tr').forEach(t=>t.onclick=()=>{sel=+t.dataset.i;render()});
+ const x=r[sel];
+ $('card').innerHTML=`<div class="h"><b>${esc(x.name)} 인프라 ${x.infra} 점</b><a id="hw">어떻게 계산했나요 ? ›</a></div><div class="items">${x.items.map(([k,v,s])=>`<div class="it ${v<65?'lo':''}"><div class="t">${k}<span>${v}</span></div><div class="b"><i style="width:${v}%"></i></div><small class="${s?'':'e'}">${s?esc(s):'예시 데이터'}</small></div>`).join('')}</div>`;
+ $('how').innerHTML=`<b>계산 방법</b><br>· 관련 업체: ‘${esc(job)}’ 관련 업종의 국민연금 가입 사업장을 주소의 읍·면·동으로 묶은 수 (골프장 제외)<br>· 원룸 평균 월세: 국토부 실거래가 원룸(33㎡ 이하) 거래 ${x.rentN}건의 거래 수 가중 평균<br>· 병원·대중교통·편의점: 동네 대표 지점 반경 2km 안 의원·병원 / 버스정류장 / 편의점 수를 지역 상위 20% 동네 수준을 100점으로 환산<br>· 인프라 점수: 병원·대중교통·편의점 세 점수의 평균 (마트·학교·보육은 데이터가 없어 <b>예시 데이터</b>이며 점수에 넣지 않음)<br>· 업체까지 평균: 동네 대표 지점에서 관련 업체까지 직선거리 평균(${x.avg.toFixed(1)}km) × 1.3, 시속 30km + 3분으로 추정`;
+ $('hw').onclick=()=>$('how').classList.toggle('on');
+}
+$('seg').querySelectorAll('button').forEach(b=>b.onclick=()=>{sort=b.dataset.k;sel=0;$('seg').querySelectorAll('button').forEach(y=>y.classList.toggle('on',y===b));render()});
+main().catch(e=>{$('title').textContent='동네를 불러오지 못했어요';console.error(e)});
+</script></body></html>
