@@ -1,0 +1,113 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>일터동네 – 회사 근처 집·인프라 지도</title>
+<meta name="description" content="회사를 지도 중심에 두고 근처 원룸 실거래 시세와 병원·편의점·버스정류장을 겹쳐 봅니다.">
+<meta name="robots" content="noindex, nofollow">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+:root{--o:#E0531F;--ol:#FDEFE9;--ink:#1f1f1f;--g:#6b6b6b;--line:#e4e4e4}
+*{box-sizing:border-box}i{font-style:normal}body{margin:0;font-family:Pretendard,system-ui,sans-serif;color:var(--ink);background:#fff}
+a{color:inherit;text-decoration:none}
+header{height:56px;display:flex;align-items:center;padding:0 34px 0 30px;border-bottom:1px solid #eee;background:#fff}
+.logo{font-size:21px;font-weight:800;letter-spacing:-.5px;width:148px}.logo b{color:var(--o);font-weight:800}
+nav{display:flex;height:100%}nav a{display:flex;align-items:center;height:100%;font-size:16px;color:#666;margin-right:58px;border-bottom:3px solid transparent;padding-top:3px}
+nav a.on{color:var(--ink);font-weight:700;border-color:var(--o)}
+.app{margin-left:auto;background:var(--o);color:#fff;font-weight:700;font-size:14px;height:33px;padding:0 30px;border-radius:17px;display:flex;align-items:center}
+.bar{display:flex;gap:10px;align-items:center;padding:12px 28px;border-bottom:1px solid #eee}
+.bar select,.bar button{height:36px;border:1px solid #ccc;border-radius:18px;background:#fff;font:inherit;font-size:14px;padding:0 18px;color:#333;cursor:pointer}
+.bar select{appearance:none;padding-right:30px;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23333'/%3E%3C/svg%3E") no-repeat right 14px center;min-width:150px}
+.bar select.band{background-color:var(--o);color:#fff;border-color:var(--o);font-weight:800;min-width:0;width:auto;background-image:none;padding:0 18px}
+#band{min-width:0;width:auto;padding:0 22px}
+.bar .more{border-color:var(--o);color:var(--o);min-width:150px}
+.body{display:grid;grid-template-columns:360px 1fr;height:calc(100vh - 118px);min-height:520px}
+.side{padding:14px 18px 20px 28px;overflow:auto}
+.sh{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}.sh b{font-size:17px;font-weight:800}
+.ex{font-size:13px;font-weight:700;color:var(--o);border:1px solid var(--o);background:var(--ol);border-radius:14px;padding:4px 12px;white-space:nowrap}
+.card{display:flex;gap:16px;border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:12px;cursor:pointer}
+.card.sel{border:2px solid var(--o);padding:11px}
+.ph{width:120px;height:110px;flex:none;background:#ececec;border-radius:4px;display:flex;align-items:center;justify-content:center}
+.card b{display:block;font-size:19px;font-weight:800;margin-top:4px}.card small{display:block;font-size:13px;color:var(--g);margin-top:8px}
+.card .c{color:var(--o);font-weight:800}.card .s{font-size:12px;color:#888}
+.mapw{position:relative}#map{position:absolute;inset:0;z-index:0}
+.mute{filter:grayscale(.85) brightness(1.08) contrast(.85)}
+.layers{position:absolute;right:14px;top:14px;z-index:500;background:#fff;border-radius:8px;box-shadow:0 1px 6px rgba(0,0,0,.18);display:flex;flex-direction:column;padding:6px 0;width:58px}
+.layers button{border:0;background:none;font:inherit;font-size:14px;color:#555;height:52px;cursor:pointer;border-bottom:1px solid #f0f0f0}.layers button:last-child{border:0}
+.layers button.on{color:var(--o);font-weight:800}
+.info{position:absolute;left:14px;bottom:18px;z-index:500;background:#fff;border-radius:8px;box-shadow:0 1px 8px rgba(0,0,0,.18);padding:14px 18px;width:400px}
+.info .t{display:flex;justify-content:space-between;align-items:center;font-weight:800;font-size:15px}.info p{margin:12px 0 0;font-size:14px;color:#444}
+.pin{background:#fff;border:2px solid var(--o);color:var(--o);font-weight:800;font-size:14px;border-radius:12px;padding:3px 9px;white-space:nowrap;box-shadow:0 1px 3px rgba(0,0,0,.2);transform:translate(-50%,-50%);display:inline-block}
+.pin.on{background:var(--o);color:#fff}
+.co{background:#1f1f1f;color:#fff;font-weight:800;font-size:14px;border-radius:6px;padding:8px 18px;white-space:nowrap;transform:translate(-50%,-50%);display:inline-block}
+.dot{width:26px;height:26px;border-radius:50%;color:#fff;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+.rl{color:var(--o);font-weight:800;font-size:13px;white-space:nowrap;transform:translate(-50%,-50%);display:inline-block;background:rgba(255,255,255,.7);padding:0 4px;border-radius:4px}
+.note{font-size:12px;color:#888;margin:4px 0 0;line-height:1.5}
+</style></head><body>
+<header><a class="logo" href="/ilteodongne-web/">일터<b>동네</b></a><nav><a id="nj" href="/ilteodongne-web/jobs/">직장 찾기</a><a id="nc" href="/ilteodongne-web/compare/">동네 비교</a><a class="on" href="/ilteodongne-web/map/">집·인프라</a><a href="/ilteodongne-web/blog/">동네 이야기</a></nav><a class="app" href="#" aria-disabled="true">앱 다운로드</a></header>
+<div class="bar">
+<select class="band" id="band" aria-label="방 종류"><option value="원룸">원룸</option><option value="투룸">투룸</option><option value="쓰리룸">쓰리룸</option><option value="85">85㎡ 초과</option></select>
+<select id="dep" aria-label="보증금"><option value="1000">보증금 1 천 이하</option><option value="500">보증금 500 이하</option><option value="3000">보증금 3 천 이하</option><option value="99999">보증금 전체</option></select>
+<select id="rent" aria-label="월세"><option value="50">월세 50 이하</option><option value="40">월세 40 이하</option><option value="70">월세 70 이하</option><option value="999">월세 전체</option></select>
+<select id="min" aria-label="회사까지 시간"><option value="15">회사까지 15 분</option><option value="10">회사까지 10 분</option><option value="20">회사까지 20 분</option><option value="30">회사까지 30 분</option></select>
+<button type="button" class="more" id="more" title="면적·층수 필터는 실거래 요약 데이터에 없어 준비 중이에요">+ 필터 더보기</button>
+</div>
+<div class="body">
+<aside class="side"><div class="sh"><b id="cnt">불러오는 중…</b><span class="ex">실거래 시세</span></div><div id="list"></div>
+<p class="note">매물이 아닌 국토부 원룸·주택 실거래 요약(동·리별 대표값)이에요. 위치는 동·리 대표 지점, 시간은 직선거리 기반 추정입니다.</p></aside>
+<div class="mapw"><div id="map"></div>
+<div class="layers" id="layers"><button data-l="rent" class="on">매물</button><button data-l="clinic" class="on">병원</button><button data-l="convenience" class="on" title="편의점·마트">마트</button><button data-l="bus">교통</button><button data-l="radius" class="on">거리</button></div>
+<div class="info"><div class="t">반경 안 생활 인프라<span class="ex">실데이터</span></div><p id="infra">계산 중…</p></div>
+</div></div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const U='https://zurfdfqfztydhbmjwyqx.supabase.co',K='sb_publishable_8asTfEEJyyDniSAITehVqg_fNAf1Oh7',B='/ilteodongne-web/';
+const qs=new URLSearchParams(location.search),$=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const job=qs.get('job');if(job){$('nj').href=B+'jobs/?'+new URLSearchParams({job});$('nc').href=B+'compare/?'+new URLSearchParams({job})}
+function km(a,b,c,d){const r=Math.PI/180;return 6371*Math.hypot((d-b)*r*Math.cos((a+c)/2*r),(c-a)*r)}
+const mins=d=>Math.max(3,Math.round(d*1.3/30*60+3)); // 직선 × 1.3, 시속 30km, +3분
+const radiusKm=m=>Math.max(.5,(m-3)/60*30/1.3);
+const cleanName=s=>String(s||'').replace(/주식회사|\(주\)|㈜|\(유\)|유한회사/g,'').trim();
+const house='<svg width="44" height="40" viewBox="0 0 44 40"><path d="M22 4L4 20h5v16h26V20h5z" fill="#c9c9c9"/><rect x="18" y="24" width="8" height="12" fill="#ececec"/></svg>';
+const map=L.map('map',{zoomControl:false,attributionControl:false}).setView([36.85,127.1],13);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,className:'mute'}).addTo(map);
+const LY={rent:L.layerGroup(),clinic:L.layerGroup(),convenience:L.layerGroup(),bus:L.layerGroup(),radius:L.layerGroup()};
+let co=null,rent=[],infra={},pts=[],items=[],sel=null,pinById=new Map();
+async function pickCompany(){
+ if(qs.get('lat')&&qs.get('lng'))return{pid:qs.get('company'),name:qs.get('name')||'선택한 회사',lat:+qs.get('lat'),lng:+qs.get('lng'),city:qs.get('city')||''};
+ const r=await fetch(`${U}/rest/v1/rpc/search_places?offset=0&limit=1000`,{method:'POST',headers:{apikey:K,'Content-Type':'application/json'},body:JSON.stringify({p_category:'제조/생산',p_city:null,p_limit:1000})});
+ const d=(await r.json()).filter(p=>!/골프/.test((p.name||'')+(p.industry||''))&&p.lat>36.6&&p.lat<37.2).sort((a,b)=>(b.headcount||0)-(a.headcount||0));
+ const p=d.find(x=>x.pid===qs.get('company'))||d[0];return{pid:p.pid,name:p.name,lat:p.lat,lng:p.lng,city:p.city,auto:!qs.get('company')};
+}
+function build(){
+ const band=$('band').value,dep=+$('dep').value,rmax=+$('rent').value,R=radiusKm(+$('min').value);
+ const P=new Map();pts.forEach(([c,u,la,ln])=>{if(!P.has(c+'|'+u))P.set(c+'|'+u,[la,ln])});
+ items=rent.map((x,i)=>{const p=P.get(x.city+'|'+x.umd)||P.get(x.city+'|'+x.umd.split(' ')[0]);if(!p)return null;const d=km(co.lat,co.lng,p[0],p[1]);return{...x,id:i,la:p[0],ln:p[1],d}})
+  .filter(x=>x&&x.band.startsWith(band)&&x.dep<=dep&&x.rent<=rmax&&x.d<=R).sort((a,b)=>a.d-b.d);
+ if(!items.some(x=>x.id===sel))sel=items[0]?.id;
+ $('cnt').textContent=`회사 근처 실거래 시세 ${items.length} 곳`;
+ $('list').innerHTML=items.length?items.map(x=>`<div class="card ${x.id===sel?'sel':''}" data-id="${x.id}"><i class="ph">${house}</i><span><b>월세 ${x.dep.toLocaleString()} / ${x.rent}</b><small>${esc(x.band.replace(/\(.*\)/,''))} · ${esc(x.umd)} · 거래 ${x.n} 건</small><small class="c">회사까지 차 ${mins(x.d)} 분</small><small class="s">국토부 실거래가 대표값 · 매물 아님</small></span></div>`).join(''):'<p class="note">조건에 맞는 거래가 없어요. 보증금·월세·시간 조건을 넓혀 보세요.</p>';
+ $('list').querySelectorAll('.card').forEach(c=>c.onclick=()=>{sel=+c.dataset.id;const x=items.find(y=>y.id===sel);map.panTo([x.la,x.ln]);build()});
+ LY.rent.clearLayers();items.forEach(x=>L.marker([x.la,x.ln],{icon:L.divIcon({className:'',html:`<span class="pin ${x.id===sel?'on':''}">${x.rent}</span>`,iconSize:[0,0]}),zIndexOffset:x.id===sel?900:0}).on('click',()=>{sel=x.id;build()}).bindTooltip(`${esc(x.umd)} ${esc(x.band)} · 보증금 ${x.dep} / 월세 ${x.rent} · 거래 ${x.n}건`).addTo(LY.rent));
+ LY.radius.clearLayers();L.circle([co.lat,co.lng],{radius:R*1000,color:'#E0531F',weight:2,dashArray:'6 6',fillColor:'#E0531F',fillOpacity:.08}).addTo(LY.radius);
+ L.marker([co.lat+R/111,co.lng],{icon:L.divIcon({className:'',html:`<span class="rl">차 ${$('min').value} 분 반경</span>`,iconSize:[0,0]})}).addTo(LY.radius);
+ const inR=k=>infra[k].filter(q=>km(co.lat,co.lng,q[0],q[1])<=R);
+ const DOT={clinic:['#3f9a5c','병'],convenience:['#3f7fd8','마'],bus:['#8a6bd1','버']};
+ for(const k of ['clinic','convenience','bus']){LY[k].clearLayers();inR(k).slice(0,400).forEach(q=>L.marker([q[0],q[1]],{icon:L.divIcon({className:'',html:`<div class="dot" style="background:${DOT[k][0]}">${DOT[k][1]}</div>`,iconSize:[26,26],iconAnchor:[13,13]})}).bindTooltip(esc(q[2]||'')).addTo(LY[k]))}
+ const night=infra.clinicRaw.filter(q=>q.night&&km(co.lat,co.lng,q.lat,q.lon)<=R).length;
+ $('infra').textContent=`야간 진료 병원 ${night} · 병원·의원 ${inR('clinic').length} · 편의점 ${inR('convenience').length} · 버스정류장 ${inR('bus').length}`;
+ map.fitBounds(L.latLng(co.lat,co.lng).toBounds(R*2000*1.15),{animate:false});
+}
+async function main(){
+ const [r,inf,p,c]=await Promise.all(['rent','infra','umd-points'].map(f=>fetch(B+'data/'+f+'.json?v=20261105').then(x=>x.json())).concat([pickCompany()]));
+ rent=r;pts=p;co=c;infra={clinicRaw:inf.clinic};for(const k of ['clinic','convenience','bus'])infra[k]=inf[k].map(q=>Array.isArray(q)?q:[q.lat,q.lon,q.n]).filter(q=>q[0]&&q[1]);
+ const nm=cleanName(co.name);document.title=`일터동네 – ${nm} 근처 집·인프라`;
+ history.replaceState(null,'',location.pathname+'?'+new URLSearchParams({company:co.pid,name:co.name,lat:co.lat,lng:co.lng,city:co.city,...(job?{job}:{})}));
+ L.marker([co.lat,co.lng],{icon:L.divIcon({className:'',html:`<span class="co">${esc(nm)}</span>`,iconSize:[0,0]}),zIndexOffset:1000}).addTo(map);
+ Object.entries(LY).forEach(([k,l])=>{if(document.querySelector(`[data-l=${k}]`).classList.contains('on'))l.addTo(map)});
+ build();
+}
+document.querySelectorAll('#layers button').forEach(b=>b.onclick=()=>{b.classList.toggle('on');const l=LY[b.dataset.l];b.classList.contains('on')?l.addTo(map):map.removeLayer(l)});
+['band','dep','rent','min'].forEach(id=>$(id).onchange=build);
+$('more').onclick=()=>alert('면적·층수 필터는 준비 중이에요. 지금 데이터는 동·리별 실거래 요약값입니다.');
+main().catch(e=>{$('cnt').textContent='불러오지 못했어요';console.error(e)});
+</script></body></html>

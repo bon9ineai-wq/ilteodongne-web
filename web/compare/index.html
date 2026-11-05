@@ -38,7 +38,7 @@ tr.sel .rd{border:6px solid var(--o);background:#fff}
 .it.lo .b i{background:#aaa}.it small{display:block;font-size:11px;color:#999;margin-top:6px}.it small.e{color:var(--o);font-weight:700}
 .how{display:none;margin-top:10px;font-size:13px;color:#555;background:#f6f6f6;border-radius:8px;padding:12px 16px;line-height:1.7}.how.on{display:block}
 </style></head><body>
-<header><a class="logo" href="/ilteodongne-web/">일터<b>동네</b></a><nav><a id="nj" href="/ilteodongne-web/jobs/">직장 찾기</a><a class="on" href="/ilteodongne-web/compare/">동네 비교</a><a href="#" aria-disabled="true">집·인프라</a><a href="/ilteodongne-web/blog/">동네 이야기</a></nav><a class="app" href="#" aria-disabled="true">앱 다운로드</a></header>
+<header><a class="logo" href="/ilteodongne-web/">일터<b>동네</b></a><nav><a id="nj" href="/ilteodongne-web/jobs/">직장 찾기</a><a class="on" href="/ilteodongne-web/compare/">동네 비교</a><a id="nm" href="/ilteodongne-web/map/">집·인프라</a><a href="/ilteodongne-web/blog/">동네 이야기</a></nav><a class="app" href="#" aria-disabled="true">앱 다운로드</a></header>
 <main class="wrap">
 <div class="th"><h1 id="title">동네 불러오는 중…</h1><span class="ex">마트·학교는 예시 데이터</span>
 <div class="seg" id="seg"><button type="button" data-k="cnt" class="on">업체 많은순</button><button type="button" data-k="rent">월세 낮은순</button><button type="button" data-k="infra">인프라 높은순</button></div></div>
@@ -54,6 +54,7 @@ const JOBMAP=[[/생산|품질|설비|조립|용접|가공|도장|검사|오퍼|�
 const CITIES=['평택시','천안시','아산시'];
 const qs=new URLSearchParams(location.search);
 const job=(qs.get('job')||'생산직').trim();
+document.getElementById('nm').href='/ilteodongne-web/map/?'+new URLSearchParams({job});
 const cat=CATS.includes(qs.get('c'))?qs.get('c'):((JOBMAP.find(([r])=>r.test(job))||[0,CATS.find(c=>c.split('/').some(w=>job.includes(w)))||'제조/생산'])[1]);
 const reg=(qs.get('region')||'').replace(/\s/g,'');
 const cities=CITIES.filter(c=>reg&&(c.includes(reg)||reg.includes(c.slice(0,2))));
@@ -88,7 +89,8 @@ async function main(){
   const infraScore=Math.round((sc('clinic')+sc('bus')+sc('convenience'))/3);
   const ds=d.list.map(p=>km(la,ln,p.lat,p.lng)).sort((a,b)=>a-b);const avg=ds.reduce((s,x)=>s+x,0)/ds.length;
   const min=Math.max(3,Math.round(avg*1.3/30*60+3));
-  return {name:d.city.replace(/시( |$)/,' ').split(' ')[0]+' '+d.umd,city:d.city,umd:d.umd,n:d.list.length,rent:rv,rentN:n,infra:infraScore,items,min,avg,c};
+  const top=[...d.list].sort((a,b)=>(b.headcount||0)-(a.headcount||0))[0];
+  return {name:d.city.replace(/시( |$)/,' ').split(' ')[0]+' '+d.umd,city:d.city,umd:d.umd,n:d.list.length,rent:rv,rentN:n,infra:infraScore,items,min,avg,c,top};
  });
  render();
 }
@@ -100,7 +102,7 @@ function render(){
  $('rows').innerHTML=r.map((x,i)=>`<tr class="${i===sel?'sel':''} ${x.infra>=70?'hi':''}" data-i="${i}"><td class="n">${esc(x.name)}</td><td>${x.n} 곳</td>${x.rent!=null?`<td class="r">${x.rent} 만 원</td>`:'<td class="na">거래 자료 없음</td>'}<td><span class="bar"><i style="width:${x.infra}%"></i></span><span class="sc">${x.infra}</span></td><td>차 ${x.min} 분</td><td><span class="rd"></span></td></tr>`).join('');
  $('rows').querySelectorAll('tr').forEach(t=>t.onclick=()=>{sel=+t.dataset.i;render()});
  const x=r[sel];
- $('card').innerHTML=`<div class="h"><b>${esc(x.name)} 인프라 ${x.infra} 점</b><a id="hw">어떻게 계산했나요 ? ›</a></div><div class="items">${x.items.map(([k,v,s])=>`<div class="it ${v<65?'lo':''}"><div class="t">${k}<span>${v}</span></div><div class="b"><i style="width:${v}%"></i></div><small class="${s?'':'e'}">${s?esc(s):'예시 데이터'}</small></div>`).join('')}</div>`;
+ $('card').innerHTML=`<div class="h"><b>${esc(x.name)} 인프라 ${x.infra} 점</b><span><a class="mp" href="/ilteodongne-web/map/?${new URLSearchParams({company:x.top.pid,name:x.top.name,lat:x.top.lat,lng:x.top.lng,city:x.top.city,job})}">${esc(x.name)} 집·인프라 지도 ›</a> <a id="hw">어떻게 계산했나요 ? ›</a></span></div><div class="items">${x.items.map(([k,v,s])=>`<div class="it ${v<65?'lo':''}"><div class="t">${k}<span>${v}</span></div><div class="b"><i style="width:${v}%"></i></div><small class="${s?'':'e'}">${s?esc(s):'예시 데이터'}</small></div>`).join('')}</div>`;
  $('how').innerHTML=`<b>계산 방법</b><br>· 관련 업체: ‘${esc(job)}’ 관련 업종의 국민연금 가입 사업장을 주소의 읍·면·동으로 묶은 수 (골프장 제외)<br>· 원룸 평균 월세: 국토부 실거래가 원룸(33㎡ 이하) 거래 ${x.rentN}건의 거래 수 가중 평균<br>· 병원·대중교통·편의점: 동네 대표 지점 반경 2km 안 의원·병원 / 버스정류장 / 편의점 수를 지역 상위 20% 동네 수준을 100점으로 환산<br>· 인프라 점수: 병원·대중교통·편의점 세 점수의 평균 (마트·학교·보육은 데이터가 없어 <b>예시 데이터</b>이며 점수에 넣지 않음)<br>· 업체까지 평균: 동네 대표 지점에서 관련 업체까지 직선거리 평균(${x.avg.toFixed(1)}km) × 1.3, 시속 30km + 3분으로 추정`;
  $('hw').onclick=()=>$('how').classList.toggle('on');
 }

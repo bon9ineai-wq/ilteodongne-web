@@ -35,6 +35,7 @@ h1{margin:0;font-size:28px;font-weight:800;letter-spacing:-.6px}
 .co .lt{width:54px;height:54px;flex:none;border-radius:7px;background:#ededed;color:#888;font-size:20px;font-weight:700;display:flex;align-items:center;justify-content:center}
 .co b{display:block;font-size:16px;font-weight:800;padding-right:80px}.co small{display:block;margin-top:10px;font-size:14px;color:var(--g)}
 .co .hire{position:absolute;right:16px;top:14px;font-size:13px;font-weight:800;color:var(--o)}
+.co .mapl{position:absolute;right:16px;bottom:12px;font-size:12px;font-weight:700;color:#666}.co .mapl:hover{color:var(--o)}
 .more{height:44px;border:1px solid #ccc;border-radius:8px;background:#fff;font:inherit;font-size:15px;cursor:pointer}
 .empty{padding:40px;text-align:center;color:#777;border:1px dashed #ccc;border-radius:8px}
 .mapcol h3{margin:0 0 12px;font-size:16px;font-weight:800}
@@ -44,7 +45,7 @@ h1{margin:0;font-size:28px;font-weight:800;letter-spacing:-.6px}
 .cmp{display:flex;align-items:center;justify-content:center;height:48px;margin-top:14px;border-radius:6px;background:var(--o);color:#fff;font-weight:800;font-size:15px}
 .src{margin-top:10px;font-size:12px;color:#888;line-height:1.5}
 </style></head><body>
-<header><a class="logo" href="/ilteodongne-web/">일터<b>동네</b></a><nav><a class="on" href="/ilteodongne-web/jobs/">직장 찾기</a><a id="navcmp" href="/ilteodongne-web/compare/">동네 비교</a><a href="#" aria-disabled="true">집·인프라</a><a href="/ilteodongne-web/blog/">동네 이야기</a></nav><a class="app" href="#" aria-disabled="true">앱 다운로드</a></header>
+<header><a class="logo" href="/ilteodongne-web/">일터<b>동네</b></a><nav><a class="on" href="/ilteodongne-web/jobs/">직장 찾기</a><a id="navcmp" href="/ilteodongne-web/compare/">동네 비교</a><a id="nm" href="/ilteodongne-web/map/">집·인프라</a><a href="/ilteodongne-web/blog/">동네 이야기</a></nav><a class="app" href="#" aria-disabled="true">앱 다운로드</a></header>
 <main class="wrap">
 <p class="crumb"><a href="/ilteodongne-web/">홈</a> › 직종 › <span id="cj"></span></p>
 <div class="th"><h1 id="title">관련 업체 불러오는 중…</h1></div>
@@ -71,6 +72,7 @@ const CENTER={'평택시':[36.99,127.09],'천안시':[36.82,127.16],'아산시':
 const SIZES=[['50 인 미만',0,49],['50~299 인',50,299],['300 인 이상',300,1e9]];
 const qs=new URLSearchParams(location.search);
 const job=(qs.get('job')||'생산직').trim();
+document.getElementById('nm').href='/ilteodongne-web/map/?'+new URLSearchParams({job});
 const cat=CATS.includes(qs.get('c'))?qs.get('c'):((JOBMAP.find(([r])=>r.test(job))||[0,CATS.find(c=>c.split('/').some(w=>job.includes(w)))||'제조/생산'])[1]);
 const reg=(qs.get('region')||qs.get('city')||'').replace(/\s/g,'');
 let st={cities:new Set(CITIES.filter(c=>reg&&(c.includes(reg)||reg.includes(c.slice(0,2))))),size:qs.get('size')||'',ind:'',shown:20,sel:null};
@@ -115,7 +117,7 @@ function render(){
  $('basis').innerHTML=MAP?`‘${esc(job)}’ 직종을 많이 채용하는 업종 ${MAP.industries.length}개를 골라 이 업종의 국민연금 가입 사업장(천안·아산·평택, 골프장 제외)을 보여드립니다. 채용 여부는 데이터에 없어 ‘채용공고’는 외부 검색으로 연결됩니다.<br><b>포함 업종</b>: ${MAP.industries.map(i=>esc(i.replace(/\s+/g,' '))).join(' · ')}`:`‘${esc(job)}’ 직종은 업종 분류 <b>${esc(cat)}</b>에 연결했어요. 업체 데이터는 직종이 아닌 업종 기준이라, 이 업종에 속한 국민연금 가입 사업장(천안·아산·평택, 골프장 제외)을 보여드립니다. 채용 여부는 데이터에 없어 ‘채용공고’는 외부 검색으로 연결됩니다.`;
  $('bb').onclick=()=>$('basis').classList.toggle('on');
  const show=list.slice(0,st.shown);if(!st.sel||!show.some(p=>p.pid===st.sel))st.sel=show[0]?.pid;
- $('list').innerHTML=show.length?show.map(p=>{const n=cleanName(p.name);return `<div class="co ${p.pid===st.sel?'sel':''}" data-pid="${p.pid}"><i class="lt">${esc(n[0]||'?')}</i><span><b>${esc(n)}</b><small>${esc(p.city.slice(0,2))} ${esc(dong(p))} · ${esc(shortInd(p.industry))} · 가입자 ${p.headcount!=null?p.headcount.toLocaleString():'-'} 명</small></span><a class="hire" target="_blank" rel="noopener" href="https://www.saramin.co.kr/zf_user/search?searchword=${encodeURIComponent(n)}">채용공고 ↗</a></div>`}).join('')+(list.length>st.shown?`<button class="more" id="more" type="button">업체 더 보기 (${(list.length-st.shown).toLocaleString()} 곳 남음)</button>`:''):'<div class="empty">조건에 맞는 업체가 없어요. 필터를 줄여 보세요.</div>';
+ $('list').innerHTML=show.length?show.map(p=>{const n=cleanName(p.name);return `<div class="co ${p.pid===st.sel?'sel':''}" data-pid="${p.pid}"><i class="lt">${esc(n[0]||'?')}</i><span><b>${esc(n)}</b><small>${esc(p.city.slice(0,2))} ${esc(dong(p))} · ${esc(shortInd(p.industry))} · 가입자 ${p.headcount!=null?p.headcount.toLocaleString():'-'} 명</small></span><a class="hire" target="_blank" rel="noopener" href="https://www.saramin.co.kr/zf_user/search?searchword=${encodeURIComponent(n)}">채용공고 ↗</a><a class="mapl" href="/ilteodongne-web/map/?${new URLSearchParams({company:p.pid,name:p.name,lat:p.lat,lng:p.lng,city:p.city,job})}">근처 집·인프라 ›</a></div>`}).join('')+(list.length>st.shown?`<button class="more" id="more" type="button">업체 더 보기 (${(list.length-st.shown).toLocaleString()} 곳 남음)</button>`:''):'<div class="empty">조건에 맞는 업체가 없어요. 필터를 줄여 보세요.</div>';
  $('list').querySelectorAll('.co').forEach(el=>el.onclick=e=>{if(e.target.closest('a'))return;const p=rows.find(r=>r.pid===el.dataset.pid);if(p&&p.lat)location.href='/ilteodongne-web/place/?'+new URLSearchParams({pid:p.pid,lat:p.lat,lng:p.lng,city:p.city,address:p.address||''})});
  if($('more'))$('more').onclick=()=>{st.shown+=20;render()};
  renderMap(list);
