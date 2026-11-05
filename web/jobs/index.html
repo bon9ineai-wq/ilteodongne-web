@@ -81,7 +81,11 @@ const shortInd=s=>String(s||'').replace(/\s*제조업$/,'').replace(/\s*(도매�
 const dong=p=>{const a=String(p.address||'').split(/\s+/);const i=a.findIndex(t=>t===p.city);let d=a[i+1]||'';if(/구$/.test(d)&&/[읍면동]$/.test(a[i+2]||''))d=a[i+2];return /[읍면동구]$/.test(d)?d:''};
 const cleanName=s=>String(s||'').replace(/주식회사|\(주\)|㈜|\(유\)|유한회사/g,'').trim();
 $('cj').textContent=job;
-async function fetchAll(){const out=[],seen=new Set();for(let off=0;off<5000;off+=1000){const r=await fetch(`${U}/rest/v1/rpc/search_places?offset=${off}&limit=1000`,{method:'POST',headers:{apikey:K,'Content-Type':'application/json'},body:JSON.stringify({p_category:cat,p_city:null,p_limit:5000})});const d=await r.json();if(!Array.isArray(d)||!d.length)break;let n=0;for(const p of d){if(!p||seen.has(p.pid))continue;seen.add(p.pid);out.push(p);n++}if(!n||d.length<1000)break}return out}
+let MAP=null;
+async function fetchCat(c,out,seen){for(let off=0;off<5000;off+=1000){const r=await fetch(`${U}/rest/v1/rpc/search_places?offset=${off}&limit=1000`,{method:'POST',headers:{apikey:K,'Content-Type':'application/json'},body:JSON.stringify({p_category:c,p_city:null,p_limit:5000})});const d=await r.json();if(!Array.isArray(d)||!d.length)break;let n=0;for(const p of d){if(!p||seen.has(p.pid))continue;seen.add(p.pid);out.push(p);n++}if(!n||d.length<1000)break}}
+async function fetchAll(){try{const t=await (await fetch('/ilteodongne-web/data/job_industries.json?v=20261105')).json();MAP=t[job]||null}catch(e){MAP=null}
+ const out=[],seen=new Set();for(const c of (MAP?MAP.categories:[cat]))await fetchCat(c,out,seen);
+ if(!MAP)return out;const set=new Set(MAP.industries);return out.filter(p=>set.has(p.industry))}
 function inSize(p){if(!st.size)return true;const s=SIZES.find(x=>x[0]===st.size);return s&&p.headcount>=s[1]&&p.headcount<=s[2]}
 function base(){return rows.filter(p=>(!st.cities.size||st.cities.has(p.city))&&inSize(p))}
 function filtered(){return base().filter(p=>!st.ind||shortInd(p.industry)===st.ind)}
@@ -107,8 +111,8 @@ function renderMap(list){layer.clearLayers();const all=rows.filter(p=>inSize(p)&
 function render(){
  renderSide();const list=filtered();const inds=new Set(list.map(p=>p.industry));
  $('title').textContent=`${job} 관련 업체 ${list.length.toLocaleString()} 곳`;
- $('desc').innerHTML=`${esc(job)} → ${esc(cat)} ${inds.size} 개 업종의 국민연금 가입 사업장에서 찾았어요 · <button type="button" id="bb">기준 보기</button>`;
- $('basis').innerHTML=`‘${esc(job)}’ 직종은 업종 분류 <b>${esc(cat)}</b>에 연결했어요. 업체 데이터는 직종이 아닌 업종 기준이라, 이 업종에 속한 국민연금 가입 사업장(천안·아산·평택, 골프장 제외)을 보여드립니다. 채용 여부는 데이터에 없어 ‘채용공고’는 외부 검색으로 연결됩니다.`;
+ $('desc').innerHTML=MAP?`${esc(job)} → ${inds.size} 개 업종의 국민연금 가입 사업장에서 찾았어요 · <button type="button" id="bb">기준 보기</button>`:`${esc(job)} → ${esc(cat)} ${inds.size} 개 업종의 국민연금 가입 사업장에서 찾았어요 · <button type="button" id="bb">기준 보기</button>`;
+ $('basis').innerHTML=MAP?`‘${esc(job)}’ 직종을 많이 채용하는 업종 ${MAP.industries.length}개를 골라 이 업종의 국민연금 가입 사업장(천안·아산·평택, 골프장 제외)을 보여드립니다. 채용 여부는 데이터에 없어 ‘채용공고’는 외부 검색으로 연결됩니다.<br><b>포함 업종</b>: ${MAP.industries.map(i=>esc(i.replace(/\s+/g,' '))).join(' · ')}`:`‘${esc(job)}’ 직종은 업종 분류 <b>${esc(cat)}</b>에 연결했어요. 업체 데이터는 직종이 아닌 업종 기준이라, 이 업종에 속한 국민연금 가입 사업장(천안·아산·평택, 골프장 제외)을 보여드립니다. 채용 여부는 데이터에 없어 ‘채용공고’는 외부 검색으로 연결됩니다.`;
  $('bb').onclick=()=>$('basis').classList.toggle('on');
  const show=list.slice(0,st.shown);if(!st.sel||!show.some(p=>p.pid===st.sel))st.sel=show[0]?.pid;
  $('list').innerHTML=show.length?show.map(p=>{const n=cleanName(p.name);return `<div class="co ${p.pid===st.sel?'sel':''}" data-pid="${p.pid}"><i class="lt">${esc(n[0]||'?')}</i><span><b>${esc(n)}</b><small>${esc(p.city.slice(0,2))} ${esc(dong(p))} · ${esc(shortInd(p.industry))} · 가입자 ${p.headcount!=null?p.headcount.toLocaleString():'-'} 명</small></span><a class="hire" target="_blank" rel="noopener" href="https://www.saramin.co.kr/zf_user/search?searchword=${encodeURIComponent(n)}">채용공고 ↗</a></div>`}).join('')+(list.length>st.shown?`<button class="more" id="more" type="button">업체 더 보기 (${(list.length-st.shown).toLocaleString()} 곳 남음)</button>`:''):'<div class="empty">조건에 맞는 업체가 없어요. 필터를 줄여 보세요.</div>';
