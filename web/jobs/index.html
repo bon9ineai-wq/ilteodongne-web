@@ -44,6 +44,28 @@ h1{margin:0;font-size:28px;font-weight:800;letter-spacing:-.6px}
 .bub.off{background:#bbb}
 .cmp{display:flex;align-items:center;justify-content:center;height:48px;margin-top:14px;border-radius:6px;background:var(--o);color:#fff;font-weight:800;font-size:15px}
 .src{margin-top:10px;font-size:12px;color:#888;line-height:1.5}
+@media (max-width:640px){
+header{height:auto;flex-wrap:wrap;padding:10px 16px 0;position:sticky;top:0;z-index:1000}
+.logo{width:auto;font-size:20px}
+.app{height:34px;padding:0 16px;font-size:13px}
+nav{order:3;width:100%;height:44px;overflow-x:auto;scrollbar-width:none;margin-top:6px}nav::-webkit-scrollbar{display:none}
+nav a{margin-right:22px;font-size:15px;white-space:nowrap;flex:none}
+.wrap{padding:0 16px 32px}
+h1{font-size:22px;word-break:keep-all}.desc{font-size:14px;word-break:keep-all}
+.grid{display:flex;flex-direction:column;gap:16px;margin-top:16px}
+.mapcol{order:1;width:100%}#map{height:220px}
+.side{order:2;position:static;width:100%;padding:14px}
+.side .sec{margin-bottom:12px}
+#cities,#sizes,#inds{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none}
+.ck{flex:none;margin:0;background:#fff;border-radius:18px;padding:0 12px;height:40px}.ck small{margin-left:4px}
+.pill{width:auto;flex:none;height:40px;padding:0 14px;margin:0}
+section{order:3;width:100%}
+.co{gap:14px;padding:14px;align-items:flex-start}.co.sel{padding:13px}
+.co .lt{width:44px;height:44px}.co b{font-size:16px;padding-right:72px;word-break:keep-all}
+.co .hire,.co .mapl{padding:8px 0}.co .hire{top:6px}.co .mapl{bottom:4px;font-size:13px}
+.co small{padding-bottom:22px;word-break:keep-all}
+.more{height:48px}
+}
 </style></head><body>
 <header><a class="logo" href="/ilteodongne-web/">일터<b>동네</b></a><nav><a class="on" href="/ilteodongne-web/jobs/">직장 찾기</a><a id="navcmp" href="/ilteodongne-web/compare/">동네 비교</a><a id="nm" href="/ilteodongne-web/map/">집·인프라</a><a href="/ilteodongne-web/blog/">동네 이야기</a></nav><a class="app" href="#" aria-disabled="true">앱 다운로드</a></header>
 <main class="wrap">

@@ -35,6 +35,24 @@ form button{margin-left:auto;flex:none;width:136px;height:46px;border:0;border-r
 .hood .t{display:flex;justify-content:space-between;align-items:center}.hood b{font-size:18px;font-weight:700}
 .badge{background:#e3f3e8;color:#3d9a5c;font-size:14px;font-weight:700;padding:6px 16px;border-radius:5px}
 .hood p{margin:10px 0 0;font-size:15px;color:#555}
+@media (max-width:640px){
+header{height:auto;flex-wrap:wrap;padding:10px 16px 0;position:sticky;top:0;z-index:1000}
+.logo{width:auto;font-size:20px}
+.app{height:34px;padding:0 16px;font-size:13px}
+nav{order:3;width:100%;height:44px;overflow-x:auto;scrollbar-width:none;margin-top:6px}nav::-webkit-scrollbar{display:none}
+nav a{margin-right:22px;font-size:15px;white-space:nowrap;flex:none}
+.wrap{width:auto;max-width:none;margin:0 16px}
+.hero{height:auto;padding:22px 0 20px}
+h1{font-size:24px;word-break:keep-all}.sub{font-size:15px;word-break:keep-all}
+form{height:auto;flex-wrap:wrap;border-radius:18px;padding:12px 14px;gap:8px}
+form label{margin:0 4px}#job{flex:1 1 calc(100% - 90px);height:40px}form label[for=region]{margin-left:30px}.div{display:none}
+#region{flex:1 1 60%;width:auto;height:40px;border-top:1px solid #eee}
+form button{width:100%;height:48px;margin:4px 0 0}
+.pop{flex-wrap:wrap;gap:8px}.pop span{width:100%}.pop a{height:40px;padding:0 16px}
+.cards,.hoods{grid-template-columns:1fr;gap:12px}
+.card{height:auto;min-height:84px;padding:14px 16px}.card b{margin-top:0}.card small{margin-top:6px;font-size:14px}.ic{margin-top:0}
+.mh{gap:10px;flex-wrap:wrap}.hood{height:auto;padding:14px 16px}
+}
 </style></head><body>
 <header><a class="logo" href="/ilteodongne-web/">일터<b>동네</b></a><nav><a class="on" href="/ilteodongne-web/jobs/">직장 찾기</a><a href="/ilteodongne-web/compare/">동네 비교</a><a id="nm" href="/ilteodongne-web/map/">집·인프라</a><a href="/ilteodongne-web/blog/">동네 이야기</a></nav><a class="app" href="#" aria-disabled="true">앱 다운로드</a></header>
 <section class="hero"><div class="wrap">

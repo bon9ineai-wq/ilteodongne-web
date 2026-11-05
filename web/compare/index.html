@@ -37,6 +37,28 @@ tr.sel .rd{border:6px solid var(--o);background:#fff}
 .it .b{height:8px;border-radius:4px;background:#e6e6e6;margin-top:12px;overflow:hidden}.it .b i{display:block;height:100%;background:var(--gr);border-radius:4px}
 .it.lo .b i{background:#aaa}.it small{display:block;font-size:11px;color:#999;margin-top:6px}.it small.e{color:var(--o);font-weight:700}
 .how{display:none;margin-top:10px;font-size:13px;color:#555;background:#f6f6f6;border-radius:8px;padding:12px 16px;line-height:1.7}.how.on{display:block}
+@media (max-width:640px){
+header{height:auto;flex-wrap:wrap;padding:10px 16px 0;position:sticky;top:0;z-index:1000}
+.logo{width:auto;font-size:20px}
+.app{height:34px;padding:0 16px;font-size:13px}
+nav{order:3;width:100%;height:44px;overflow-x:auto;scrollbar-width:none;margin-top:6px}nav::-webkit-scrollbar{display:none}
+nav a{margin-right:22px;font-size:15px;white-space:nowrap;flex:none}
+.wrap{padding:0 16px 32px}
+.th{flex-wrap:wrap;gap:10px}h1{font-size:21px;flex:1 1 100%;word-break:keep-all}
+.seg{margin:0;width:100%}.seg button{flex:1;height:40px;padding:0 6px}
+table,thead,tbody,tr,td{display:block;width:100%}thead{display:none}
+tbody tr{display:grid;grid-template-columns:1fr auto;gap:6px 12px;border:1px solid #e6e6e6;border-radius:8px;padding:14px;margin-bottom:10px;position:relative}
+tbody td{height:auto;padding:0;border:0;font-size:14px}
+tbody tr.sel{border:2px solid var(--o);padding:13px}tbody tr.sel td:first-child{box-shadow:none}
+td.n{font-size:17px;grid-column:1}td:nth-child(2){grid-column:2;text-align:right;font-weight:700}
+td:nth-child(3),td:nth-child(5){grid-column:span 1}td:nth-child(5){text-align:right}
+td:nth-child(4){grid-column:1/-1}td:nth-child(4)::before{content:'인프라 ';color:#777;font-size:13px}
+.bar{width:calc(100% - 90px);margin-right:8px}
+td:nth-child(6){display:none}
+.src{text-align:left}
+.card{flex-direction:column;align-items:stretch;padding:16px;gap:14px}.card .h{width:auto}.card .h a{padding:6px 0}
+.items{grid-template-columns:repeat(2,1fr);gap:14px}
+}
 </style></head><body>
 <header><a class="logo" href="/ilteodongne-web/">일터<b>동네</b></a><nav><a id="nj" href="/ilteodongne-web/jobs/">직장 찾기</a><a class="on" href="/ilteodongne-web/compare/">동네 비교</a><a id="nm" href="/ilteodongne-web/map/">집·인프라</a><a href="/ilteodongne-web/blog/">동네 이야기</a></nav><a class="app" href="#" aria-disabled="true">앱 다운로드</a></header>
 <main class="wrap">
