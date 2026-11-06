@@ -17,7 +17,7 @@ nav a.on{color:var(--ink);font-weight:700;border-color:var(--o)}
 .bar select,.bar button{height:36px;border:1px solid #ccc;border-radius:18px;background:#fff;font:inherit;font-size:14px;padding:0 18px;color:#333;cursor:pointer}
 .bar select{appearance:none;padding-right:30px;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23333'/%3E%3C/svg%3E") no-repeat right 14px center;min-width:140px}
 .bar select.band{background-color:var(--o);color:#fff;border-color:var(--o);font-weight:800;min-width:0;width:auto;background-image:none;padding:0 18px}
-.bar .hint{font-size:13px;color:#888;margin-left:4px}
+.bar .hint{font-size:13px;color:#888;margin-left:4px;flex:none;white-space:nowrap}
 .body{display:grid;grid-template-columns:360px 1fr;height:calc(100vh - 118px);min-height:520px}
 .side{padding:14px 18px 20px 28px;overflow:auto}
 .sh{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}.sh b{font-size:17px;font-weight:800}
@@ -37,7 +37,7 @@ nav a.on{color:var(--ink);font-weight:700;border-color:var(--o)}
 .pin.on{background:var(--o);color:#fff}
 .dot{width:26px;height:26px;border-radius:50%;color:#fff;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.25)}
 .note{font-size:12px;color:#888;margin:4px 0 0;line-height:1.5}
-#dp{position:absolute;left:0;top:0;bottom:0;width:340px;z-index:700;background:#fff;box-shadow:2px 0 10px rgba(0,0,0,.15);overflow:auto;padding:16px 18px 20px;display:none}
+#dp{position:absolute;left:0;top:0;bottom:0;width:340px;z-index:700;background:#fff;box-shadow:2px 0 10px rgba(0,0,0,.15);overflow:auto;overscroll-behavior:contain;padding:16px 18px 20px;display:none}
 #dp.on{display:block}#dp h3{margin:0;font-size:18px;font-weight:800;padding-right:36px}#dp .x{position:absolute;right:10px;top:10px;width:36px;height:36px;border:0;background:#f2f2f2;border-radius:50%;font-size:18px;cursor:pointer}
 #dp .tag{display:inline-block;margin-top:8px;font-size:12px;font-weight:700;color:var(--o);border:1px solid var(--o);background:var(--ol);border-radius:12px;padding:2px 10px}
 #dp h4{margin:16px 0 8px;font-size:14px;font-weight:800}#dp table{width:100%;border-collapse:collapse;font-size:13px}#dp th{text-align:left;color:#777;font-weight:500;border-bottom:1px solid #eee;padding:6px 4px}#dp td{padding:7px 4px;border-bottom:1px solid #f2f2f2}
@@ -56,9 +56,16 @@ nav a{margin-right:22px;font-size:15px;white-space:nowrap;flex:none}
 .mapw{order:1;height:58vh;min-height:340px}.side{order:2;padding:14px 16px 24px;overflow:visible}
 .layers{width:52px;right:10px;top:10px}.layers button{height:44px;font-size:13px}
 .info{left:10px;right:10px;bottom:10px;width:auto;padding:10px 14px}.info p{font-size:13px;margin-top:6px}
-#dp{position:fixed;left:0;right:0;top:auto;bottom:0;width:auto;max-height:62vh;border-radius:16px 16px 0 0;box-shadow:0 -4px 16px rgba(0,0,0,.2);z-index:1500;padding-top:22px}
+.bar{flex-wrap:nowrap}.bar .hint{display:none}
+.mapw{overflow:hidden}
+.layers{z-index:520}
+.info{z-index:510;max-width:calc(100% - 72px)}
+#dp{position:fixed!important;left:0!important;right:0!important;top:auto!important;bottom:0!important;width:auto!important;max-height:min(62vh,calc(100dvh - 140px));border-radius:16px 16px 0 0;box-shadow:0 -4px 16px rgba(0,0,0,.2);z-index:2000;padding:22px 16px 24px;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y}
 #dp::before{content:'';position:absolute;top:8px;left:50%;width:40px;height:4px;margin-left:-20px;border-radius:2px;background:#ddd}
+body.map-sheet-open{overflow:hidden;width:100%}
+body.map-sheet-open .info,body.map-sheet-open .layers{visibility:hidden;pointer-events:none}
 }
+
 </style></head><body>
 <header><a class="logo" href="/ilteodongne-web/">일터<b>동네</b></a><nav><a id="nj" href="/ilteodongne-web/jobs/">직장 찾기</a><a id="nc" href="/ilteodongne-web/compare/">동네 비교</a><a class="on" href="/ilteodongne-web/map/">집·인프라</a><a href="/ilteodongne-web/blog/">동네 이야기</a></nav><a class="app" href="#" aria-disabled="true">앱 다운로드</a></header>
 <div class="bar">
@@ -112,7 +119,10 @@ function filtered(){
  list.sort(sort==='rent'?(a,b)=>(a.rv?.rent??999)-(b.rv?.rent??999):sort==='infra'?(a,b)=>(b.fac.clinic+b.fac.bus+b.fac.convenience)-(a.fac.clinic+a.fac.bus+a.fac.convenience):(a,b)=>b.n-a.n);
  return list;
 }
-function pick(key){sel=key;build();const h=filtered().find(x=>x.key===key);if(!h)return;map.setView([h.la,h.ln],13,{animate:false});detail(h);const c=document.querySelector(`.card[data-k="${CSS.escape(key)}"]`);c&&c.scrollIntoView({block:'nearest'})}
+const mob=()=>matchMedia('(max-width:640px)').matches;let _sy=0;
+function lockScroll(){if(!mob())return;_sy=window.scrollY||0;document.body.classList.add('map-sheet-open');document.body.style.top=`-${_sy}px`;document.body.style.position='fixed';document.body.style.left='0';document.body.style.right='0'}
+function unlockScroll(){if(!document.body.classList.contains('map-sheet-open'))return;document.body.classList.remove('map-sheet-open');document.body.style.position='';document.body.style.top='';document.body.style.left='';document.body.style.right='';window.scrollTo(0,_sy)}
+function pick(key){sel=key;build();const h=filtered().find(x=>x.key===key);if(!h)return;map.setView([h.la,h.ln],13,{animate:false});detail(h);const c=document.querySelector(`.card[data-k="${CSS.escape(key)}"]`);c&&c.scrollIntoView({block:'nearest'});setTimeout(()=>map.invalidateSize(),50)}
 function detail(h){
  const rows=rent.filter(r=>r.city===h.city&&r.umd.split(' ')[0]===h.umd);
  const sample=h.list.slice(0,6).map(p=>esc(cleanName(p.name))).join('<br>');
@@ -122,10 +132,11 @@ function detail(h){
  <h4>실거래 시세 (국토부 요약)</h4><table><thead><tr><th>방 종류</th><th>거래</th><th>보증금</th><th>월세</th></tr></thead><tbody>${rows.length?rows.map(r=>`<tr><td>${esc(r.band)}</td><td>${r.n}건</td><td>${r.dep.toLocaleString()}만</td><td>${r.rent}만</td></tr>`).join(''):'<tr><td colspan="4">이 동네 거래 자료 없음</td></tr>'}</tbody></table>
  <h4>외부에서 찾기</h4><div class="out"><a target="_blank" rel="noopener" href="https://www.saramin.co.kr/zf_user/search?searchword=${q}">사람인에서 ‘${esc(job)} ${esc(h.name)}’ 채용 검색 ↗</a><a target="_blank" rel="noopener" href="https://search.naver.com/search.naver?query=${land}">네이버에서 ‘${esc(h.city)} ${esc(h.umd)} 원룸’ 매물 검색 ↗</a></div>
  <p class="nt">채용공고·매물 원문은 저장하지 않아요. 실거래는 동·리×방 종류 대표값이며 개별 거래일·면적·층은 없습니다.</p>`;
- $('dp').classList.add('on');$('dp').scrollTop=0;$('dpx').onclick=closeD;
+ if(mob()&&$('dp').parentElement!==document.body)document.body.appendChild($('dp'));
+lockScroll();$('dp').classList.add('on');$('dp').scrollTop=0;$('dpx').onclick=closeD;setTimeout(()=>map.invalidateSize(),50);
  $('infra').textContent=`${h.name}: 병원·의원 ${h.fac.clinic}(야간 ${h.fac.night}) · 약국 ${h.fac.pharmacy} · 편의점 ${h.fac.convenience} · 버스 ${h.fac.bus}`;
 }
-function closeD(){$('dp').classList.remove('on')}
+function closeD(){$('dp').classList.remove('on');unlockScroll();setTimeout(()=>map.invalidateSize(),50)}
 function build(){
  const list=filtered();if(!list.some(h=>h.key===sel))sel=list[0]?.key||null;
  $('cnt').textContent=`${job} 관련 동네 ${list.length} 곳`;$('hint').textContent=`${job} · 동네 단위 · 매물 아님`;
@@ -149,7 +160,8 @@ async function main(){
  if(qs.get('city')&&qs.get('umd'))sel=qs.get('city')+'|'+qs.get('umd');
  else if(qs.get('lat')&&qs.get('lng')){const la=+qs.get('lat'),ln=+qs.get('lng');let best=null,bd=1e9;hoods.forEach(h=>{const d=km(la,ln,h.la,h.ln);if(d<bd){bd=d;best=h.key}});sel=best}
  Object.entries(LY).forEach(([k,l])=>{if(document.querySelector(`[data-l=${k}]`)?.classList.contains('on'))l.addTo(map)});
- build();if(sel){const h=filtered().find(x=>x.key===sel);if(h)detail(h)}
+ if(mob())document.body.appendChild($('dp'));
+build();setTimeout(()=>map.invalidateSize(),100);if(sel&&!mob()){const h=filtered().find(x=>x.key===sel);if(h)detail(h)}
 }
 document.querySelectorAll('#layers button').forEach(b=>b.onclick=()=>{b.classList.toggle('on');const l=LY[b.dataset.l];b.classList.contains('on')?l.addTo(map):map.removeLayer(l)});
 ['band','city','sort'].forEach(id=>$(id).onchange=()=>{closeD();build()});
