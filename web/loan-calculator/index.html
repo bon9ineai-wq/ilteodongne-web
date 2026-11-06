@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#2563eb"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="대출계산기"/>
+<meta name="description" content="내 정보와 지역, 집값으로 디딤돌·보금자리론·은행 대출 한도와 필요 현금을 계산합니다. 입력값은 저장되지 않습니다."/>
+<link rel="manifest" href="manifest.webmanifest"/>
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png"/>
+<link rel="apple-touch-icon" href="icon-192.png"/>
+<title>아파트 구입 대출 계산기</title>
+<style>
+:root {
+  --bg: #f1f5f9;
+  --card: #ffffff;
+  --text: #0f172a;
+  --muted: #64748b;
+  --border: #e2e8f0;
+  --primary: #2563eb;
+  --primary-soft: #dbeafe;
+  --ok: #059669;
+  --ok-bg: #d1fae5;
+  --warn: #d97706;
+  --warn-bg: #fef3c7;
+  --danger: #dc2626;
+  --danger-bg: #fee2e2;
+  --shadow: 0 1px 3px rgba(15,23,42,.08);
+  --radius: 14px;
+  --tap: 48px;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0f172a;
+    --card: #1e293b;
+    --text: #f8fafc;
+    --muted: #94a3b8;
+    --border: #334155;
+    --primary: #3b82f6;
+    --primary-soft: #1e3a8a;
+    --ok: #34d399;
+    --ok-bg: #064e3b;
+    --warn: #fbbf24;
+    --warn-bg: #78350f;
+    --danger: #f87171;
+    --danger-bg: #7f1d1d;
+    --shadow: 0 1px 3px rgba(0,0,0,.35);
+  }
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.45;
+  min-height: 100dvh;
+  padding: 12px 12px calc(24px + env(safe-area-inset-bottom));
+}
+.wrap { max-width: 640px; margin: 0 auto; }
+header { margin: 8px 4px 16px; }
+header h1 { font-size: 1.35rem; margin: 0 0 6px; letter-spacing: -0.02em; }
+header p { margin: 0; color: var(--muted); font-size: .9rem; }
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 14px;
+  margin-bottom: 12px;
+}
+.card h2 {
+  font-size: 1rem;
+  margin: 0 0 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.card h2 span {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 22px; height: 22px; border-radius: 50%;
+  background: var(--primary); color: #fff; font-size: .75rem; font-weight: 700;
+}
+.grid { display: grid; gap: 12px; grid-template-columns: 1fr; }
+@media (min-width: 520px) {
+  .grid.cols-2 { grid-template-columns: 1fr 1fr; }
+}
+label.field {
+  display: flex; flex-direction: column; gap: 6px;
+  font-size: .82rem; color: var(--muted); font-weight: 600;
+}
+input, select {
+  width: 100%;
+  min-height: var(--tap);
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 1rem;
+}
+input:focus, select:focus {
+  outline: 2px solid var(--primary);
+  outline-offset: 1px;
+  border-color: var(--primary);
+}
+.toggle-row {
+  display: flex; align-items: center; justify-content: space-between;
+  min-height: var(--tap); gap: 12px;
+  padding: 4px 2px;
+}
+.toggle-row span { font-size: .95rem; color: var(--text); font-weight: 600; }
+.switch {
+  position: relative; width: 52px; height: 32px; flex-shrink: 0;
+}
+.switch input { opacity: 0; width: 0; height: 0; }
+.slider {
+  position: absolute; inset: 0; cursor: pointer;
+  background: var(--border); border-radius: 999px; transition: .2s;
+}
+.slider:before {
+  content: ""; position: absolute; height: 26px; width: 26px;
+  left: 3px; top: 3px; background: #fff; border-radius: 50%; transition: .2s;
+  box-shadow: 0 1px 2px rgba(0,0,0,.2);
+}
+.switch input:checked + .slider { background: var(--primary); }
+.switch input:checked + .slider:before { transform: translateX(20px); }
+.seg {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 6px;
+  background: var(--bg); padding: 4px; border-radius: 12px; margin-bottom: 12px;
+  border: 1px solid var(--border);
+}
+.seg button {
+  min-height: 44px; border: 0; border-radius: 10px;
+  background: transparent; color: var(--muted); font-weight: 700; font-size: .92rem;
+  cursor: pointer;
+}
+.seg button.active { background: var(--card); color: var(--text); box-shadow: var(--shadow); }
+.meta {
+  font-size: .88rem; color: var(--muted); margin: 0 0 12px;
+  padding: 10px 12px; background: var(--bg); border-radius: 10px;
+}
+.metrics {
+  display: grid; gap: 8px; grid-template-columns: 1fr;
+  margin-bottom: 12px;
+}
+@media (min-width: 480px) { .metrics { grid-template-columns: repeat(3, 1fr); } }
+.metric {
+  background: var(--bg); border-radius: 12px; padding: 12px;
+  border: 1px solid var(--border);
+}
+.metric .v { font-size: 1.2rem; font-weight: 800; letter-spacing: -0.02em; }
+.metric .l { font-size: .78rem; color: var(--muted); margin-top: 2px; }
+.metric .d { font-size: .75rem; color: var(--muted); margin-top: 2px; }
+.metric.ok .v { color: var(--ok); }
+.metric.danger .v { color: var(--danger); }
+.table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+table { width: 100%; border-collapse: collapse; font-size: .82rem; min-width: 520px; }
+th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+th { color: var(--muted); font-weight: 700; font-size: .72rem; text-transform: none; }
+.badge {
+  display: inline-block; padding: 3px 8px; border-radius: 999px;
+  font-size: .72rem; font-weight: 700;
+}
+.badge.ok { background: var(--ok-bg); color: var(--ok); }
+.badge.warn { background: var(--warn-bg); color: var(--warn); }
+.callout {
+  margin-top: 12px; padding: 12px; border-radius: 12px;
+  background: var(--primary-soft); color: var(--text); font-size: .82rem;
+  line-height: 1.5;
+}
+.install {
+  display: none; margin-top: 8px; padding: 12px; border-radius: 12px;
+  border: 1px dashed var(--primary); background: var(--card); font-size: .85rem;
+}
+.install.show { display: block; }
+.install button {
+  margin-top: 8px; width: 100%; min-height: 44px; border: 0; border-radius: 10px;
+  background: var(--primary); color: #fff; font-weight: 700; font-size: .95rem; cursor: pointer;
+}
+footer { text-align: center; color: var(--muted); font-size: .75rem; margin-top: 8px; padding: 8px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>아파트 구입 대출 계산기</h1>
+    <p>내 정보 · 지역 · 가격을 넣으면 받을 수 있는 대출과 필요 현금을 보여 줍니다. 입력값은 저장되지 않습니다. 2026년 11월 규정 기준 추정치입니다.</p>
+  </header>
+
+  <div class="install" id="installHint">
+    <strong>홈 화면에 추가</strong>
+    <div id="installText">아이폰: 공유 → 홈 화면에 추가 · 안드로이드: 메뉴 → 홈 화면에 추가 / 앱 설치</div>
+    <button type="button" id="installBtn" style="display:none">앱으로 설치</button>
+  </div>
+
+  <section class="card">
+    <h2><span>1</span> 내 정보</h2>
+    <div class="grid cols-2">
+      <label class="field">연소득 (세전, 만원)
+        <input id="income" type="number" inputmode="decimal" value="5000" min="0"/>
+      </label>
+      <label class="field">보유 현금 (만원)
+        <input id="cash" type="number" inputmode="decimal" value="5000" min="0"/>
+      </label>
+      <label class="field">지역
+        <select id="region"></select>
+      </label>
+      <label class="field">주택 수
+        <select id="house">
+          <option value="first">생애최초 (집 가져본 적 없음)</option>
+          <option value="none">무주택 (과거 보유)</option>
+          <option value="one">1주택 (처분 조건)</option>
+          <option value="two">2주택 이상</option>
+        </select>
+      </label>
+    </div>
+    <div class="toggle-row" style="margin-top:8px">
+      <span>기혼 (신혼 포함)</span>
+      <label class="switch"><input id="married" type="checkbox"/><span class="slider"></span></label>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2><span>2</span> 원하는 아파트</h2>
+    <div class="seg" role="tablist">
+      <button type="button" class="active" data-mode="price" id="modePrice">가격으로 계산</button>
+      <button type="button" data-mode="max" id="modeMax">살 수 있는 최대 가격</button>
+    </div>
+    <div class="grid cols-2" id="priceInputs">
+      <label class="field">집값 (만원)
+        <input id="price" type="number" inputmode="decimal" value="30000" min="0"/>
+      </label>
+      <label class="field">전용면적 (㎡)
+        <input id="area" type="number" inputmode="decimal" value="59" min="0"/>
+      </label>
+      <label class="field">은행 금리 (%)
+        <input id="rate" type="number" inputmode="decimal" value="4.0" min="0" step="0.01"/>
+      </label>
+      <label class="field">대출 기간 (년)
+        <input id="years" type="number" inputmode="decimal" value="30" min="1"/>
+      </label>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2><span>3</span> 결과</h2>
+    <div id="resultPrice">
+      <p class="meta" id="ltvMeta"></p>
+      <div class="metrics" id="metrics"></div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>대출</th><th>금리</th><th>한도</th><th>필요 현금</th><th>월 원리금</th><th>상태</th></tr>
+          </thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+    </div>
+    <div id="resultMax" style="display:none">
+      <div class="metrics"><div class="metric" id="maxMetric"></div></div>
+    </div>
+    <div class="callout">
+      디딤돌·보금자리론 금리는 2026년 11월 공시 30년 기본금리(우대 미반영)로 자동 적용돼요. 디딤돌은 소득 구간별, 지방 주택 0.2%p 인하, 보금자리론은 아낌e 5.20%에 규제지역 0.2%p 가산. 취득세, 중개수수료, 이사비는 빠져 있어요. 실제 한도는 은행 심사, 스트레스 DSR, 기존 부채에 따라 달라집니다.
+    </div>
+  </section>
+
+  <footer>오프라인에서도 동작 · 추적·저장 없음 · 추정 계산기</footer>
+</div>
+
+<script>
+const REGIONS = [
+  { value: "seoul", label: "서울 (전역)", metro: true, regulated: true },
+  { value: "yongin-cheoin", label: "경기 용인 처인구", metro: true, regulated: false },
+  { value: "yongin-giheung", label: "경기 용인 기흥구", metro: true, regulated: true },
+  { value: "yongin-suji", label: "경기 용인 수지구", metro: true, regulated: true },
+  { value: "hwaseong", label: "경기 화성 (동탄 제외)", metro: true, regulated: false },
+  { value: "pyeongtaek", label: "경기 평택", metro: true, regulated: false },
+  { value: "anseong", label: "경기 안성", metro: true, regulated: false },
+  { value: "incheon", label: "인천", metro: true, regulated: false },
+  { value: "cheonan", label: "충남 천안", metro: false, regulated: false },
+  { value: "asan", label: "충남 아산", metro: false, regulated: false },
+  { value: "other", label: "기타 지방 (비규제)", metro: false, regulated: false },
+];
+
+const regionEl = document.getElementById("region");
+REGIONS.forEach((r) => {
+  const o = document.createElement("option");
+  o.value = r.value; o.textContent = r.label;
+  if (r.value === "yongin-cheoin") o.selected = true;
+  regionEl.appendChild(o);
+});
+
+const won = (v) => (v >= 10000 ? (v / 10000).toFixed(2) + "억" : Math.round(v).toLocaleString() + "만");
+const monthly = (p, r, y) => {
+  const m = r / 1200, n = y * 12;
+  return m === 0 ? p / n : (p * m) / (1 - Math.pow(1 + m, -n));
+};
+
+function vals() {
+  return {
+    region: regionEl.value,
+    price: Number(document.getElementById("price").value) || 0,
+    area: Number(document.getElementById("area").value) || 0,
+    income: Number(document.getElementById("income").value) || 0,
+    cash: Number(document.getElementById("cash").value) || 0,
+    rate: Number(document.getElementById("rate").value) || 0,
+    years: Number(document.getElementById("years").value) || 30,
+    house: document.getElementById("house").value,
+    married: document.getElementById("married").checked,
+  };
+}
+
+function ltvFor(v, r) {
+  if (v.house === "first") return (r.metro || r.regulated) ? 70 : 80;
+  if (v.house === "none") return r.regulated ? 40 : 70;
+  if (v.house === "one") return r.regulated ? 40 : 70;
+  return r.regulated ? 0 : 60;
+}
+
+function calc(P, v, r) {
+  const A = v.area, I = v.income, R = v.rate, Y = v.years;
+  const first = v.house === "first";
+  const homeless = v.house === "first" || v.house === "none";
+  const ltv = ltvFor(v, r);
+  const ltvAmt = (P * ltv) / 100;
+  const ddPrice = v.married ? 50000 : 30000;
+  const ddArea = v.married ? 85 : 60;
+  const ddCap = v.married ? (first ? 24000 : 20000) : (first ? 20000 : 15000);
+  const dd = homeless && I <= 7000 && P <= ddPrice && A <= ddArea ? Math.min(ltvAmt, ddCap) : 0;
+  const bg = homeless && I <= 7000 && P <= 60000 ? Math.min(ltvAmt, 42000) : 0;
+  const ddRate = (I <= 2000 ? 3.1 : I <= 4000 ? 3.45 : I <= 7000 ? 3.85 : 4.15) - (r.metro ? 0 : 0.2);
+  const bgRate = 5.2 + (r.regulated ? 0.2 : 0);
+  const dsrMax = (I * 0.4) / 12;
+  let bank = Math.min(ltvAmt, 60000);
+  while (bank > 0 && monthly(bank, R, Y) > dsrMax) bank -= 100;
+  return [
+    { name: "디딤돌", amt: dd, rate: ddRate, note: dd ? "가능" : "조건 미달" },
+    { name: "보금자리론", amt: bg, rate: bgRate, note: bg ? "가능" : "조건 미달" },
+    { name: "은행 주담대", amt: Math.max(bank, 0), rate: R, note: bank > 0 ? "DSR 40% 반영" : "DSR 초과" },
+  ].map((o) => ({ ...o, need: P - o.amt, pay: monthly(o.amt, o.rate, Y) }));
+}
+
+let mode = "price";
+let deferredPrompt = null;
+
+function render() {
+  const v = vals();
+  const r = REGIONS.find((x) => x.value === v.region);
+  const ltv = ltvFor(v, r);
+
+  document.getElementById("resultPrice").style.display = mode === "price" ? "block" : "none";
+  document.getElementById("resultMax").style.display = mode === "max" ? "block" : "none";
+  document.getElementById("price").closest("label").style.display = mode === "price" ? "" : "none";
+
+  if (mode === "price") {
+    const rows = calc(v.price, v, r);
+    const best = rows.reduce((a, b) => (b.amt > a.amt ? b : a));
+    document.getElementById("ltvMeta").textContent =
+      r.label + ": " + (r.metro ? "수도권" : "비수도권") + ", " +
+      (r.regulated ? "규제지역" : "비규제지역") + ", LTV " + ltv + "% 적용";
+    const needTone = best.need > v.cash ? "danger" : "ok";
+    document.getElementById("metrics").innerHTML =
+      '<div class="metric"><div class="v">' + won(best.amt) + '</div><div class="l">최대 대출</div><div class="d">' + best.name + '</div></div>' +
+      '<div class="metric ' + needTone + '"><div class="v">' + won(best.need) + '</div><div class="l">필요한 현금</div></div>' +
+      '<div class="metric"><div class="v">' + Math.round(best.pay).toLocaleString() + '만</div><div class="l">월 원리금</div></div>';
+    document.getElementById("rows").innerHTML = rows.map((o) =>
+      "<tr><td>" + o.name + "</td><td>" + o.rate.toFixed(2) + "%</td><td>" + won(o.amt) +
+      "</td><td>" + won(o.need) + "</td><td>" + Math.round(o.pay).toLocaleString() + "만</td><td><span class='badge " +
+      (o.amt ? "ok" : "warn") + "'>" + o.note + "</span></td></tr>"
+    ).join("");
+  } else {
+    let p = 0;
+    for (let x = 1000; x <= 200000; x += 500) {
+      const rows = calc(x, v, r);
+      const b = rows.reduce((a, c) => (c.amt > a.amt ? c : a));
+      if (b.amt + v.cash >= x && b.amt > 0) p = x;
+    }
+    document.getElementById("maxMetric").innerHTML =
+      '<div class="v">' + (p ? won(p) : "없음") + '</div>' +
+      '<div class="l">살 수 있는 최대 집값</div>' +
+      '<div class="d">보유 현금 ' + won(v.cash) + ' + 대출</div>';
+  }
+}
+
+document.querySelectorAll(".seg button").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    mode = btn.dataset.mode;
+    document.querySelectorAll(".seg button").forEach((b) => b.classList.toggle("active", b === btn));
+    render();
+  });
+});
+
+["income","cash","region","house","married","price","area","rate","years"].forEach((id) => {
+  document.getElementById(id).addEventListener("input", render);
+  document.getElementById(id).addEventListener("change", render);
+});
+
+render();
+
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./sw.js").catch(() => {});
+  });
+}
+
+window.addEventListener("beforeinstallprompt", (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  document.getElementById("installHint").classList.add("show");
+  const btn = document.getElementById("installBtn");
+  btn.style.display = "block";
+  btn.onclick = async () => {
+    deferredPrompt.prompt();
+    await deferredPrompt.userChoice;
+    deferredPrompt = null;
+    btn.style.display = "none";
+  };
+});
+
+// Always show install tip lightly on mobile
+if (/iPhone|iPad|Android/i.test(navigator.userAgent)) {
+  document.getElementById("installHint").classList.add("show");
+}
+</script>
+</body>
+</html>

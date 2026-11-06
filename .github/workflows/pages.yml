@@ -47,6 +47,7 @@ jobs:
           mkdir -p _site/jobs && cp web/jobs/index.html _site/jobs/
           mkdir -p _site/compare && cp web/compare/index.html _site/compare/
           mkdir -p _site/map && cp web/map/index.html _site/map/
+          mkdir -p _site/loan-calculator && cp web/loan-calculator/index.html web/loan-calculator/manifest.webmanifest web/loan-calculator/sw.js web/loan-calculator/icon-192.png web/loan-calculator/icon-512.png _site/loan-calculator/
           cp web/data/*.json _site/data/
           rm -f _site/sitemap.xml
           if grep -q 'Sitemap:' _site/robots.txt; then
