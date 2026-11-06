@@ -18,7 +18,7 @@ h1{margin:0;font-size:31px;font-weight:800;letter-spacing:-.6px;line-height:1.3}
 .sub{margin:12px 0 0;font-size:16px;color:var(--g)}
 form{margin-top:26px;height:64px;border:3px solid var(--o);border-radius:32px;background:#fff;display:flex;align-items:center;padding:0 9px 0 26px;width:850px;max-width:100%}
 form svg{flex:none}form label{font-weight:800;font-size:15px;margin:0 9px 0 11px;flex:none}
-form input{border:0;outline:0;font:inherit;font-size:16px;color:var(--ink);min-width:0}form input::placeholder{color:#777}
+form input,form select{border:0;outline:0;font:inherit;font-size:16px;color:var(--ink);min-width:0;background:transparent}form input::placeholder{color:#777}form select{cursor:pointer;appearance:none;background:transparent url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23666'/%3E%3C/svg%3E") no-repeat right 4px center;padding-right:18px}
 #job{flex:1}.div{width:1px;height:34px;background:#ddd;margin:0 12px}
 #region{width:140px}
 form button{margin-left:auto;flex:none;width:136px;height:46px;border:0;border-radius:23px;background:var(--o);color:#fff;font:inherit;font-size:18px;font-weight:800;cursor:pointer}
@@ -61,7 +61,7 @@ form button{width:100%;height:48px;margin:4px 0 0}
 <form action="/ilteodongne-web/jobs/" method="get">
 <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#1f1f1f" stroke-width="2.2" stroke-linecap="round"><circle cx="10" cy="10" r="7"/><path d="M15.5 15.5L21 21"/></svg>
 <label for="job">직종</label><input id="job" name="job" required placeholder="예: 생산직, 품질관리, 지게차">
-<i class="div"></i><label for="region" style="margin-left:10px">지역</label><input id="region" name="region" placeholder="선택 안 함">
+<i class="div"></i><label for="region" style="margin-left:10px">지역</label><select id="region" name="region" aria-label="지역 선택"><option value="">전체 지역</option><option value="평택시">평택</option><option value="천안시">천안</option><option value="아산시">아산</option></select>
 <button type="submit">검색</button></form>
 <div class="pop"><span>인기 직종</span><a href="/ilteodongne-web/jobs/?job=생산직">생산직</a><a href="/ilteodongne-web/jobs/?job=품질관리">품질관리</a><a href="/ilteodongne-web/jobs/?job=물류·지게차">물류·지게차</a><a href="/ilteodongne-web/jobs/?job=설비보전">설비보전</a><a href="/ilteodongne-web/jobs/?job=사무보조">사무보조</a></div>
 </div></section>
