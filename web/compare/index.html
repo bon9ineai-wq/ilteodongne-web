@@ -130,4 +130,4 @@ function render(){
 }
 $('seg').querySelectorAll('button').forEach(b=>b.onclick=()=>{sort=b.dataset.k;sel=0;$('seg').querySelectorAll('button').forEach(y=>y.classList.toggle('on',y===b));render()});
 main().catch(e=>{$('title').textContent='동네를 불러오지 못했어요';console.error(e)});
-</script></body></html>
+</script><script src="/ilteodongne-web/swipe-nav.js" defer></script></body></html>

@@ -40,7 +40,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p _site
-          cp web/index.html web/app.css web/app.js web/places.js web/vworld-config.js web/blog.css web/robots.txt _site/
+          cp web/index.html web/app.css web/app.js web/places.js web/vworld-config.js web/blog.css web/robots.txt web/swipe-nav.js _site/
           mkdir -p _site/blog _site/place _site/data
           cp -a web/blog/. _site/blog/
           cp web/place/index.html web/place/place.js _site/place/

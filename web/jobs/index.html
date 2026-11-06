@@ -169,4 +169,4 @@ function render(){
 Promise.all([fetchAll(),fetch(B+'data/rent.json?v=20261106').then(r=>r.json()),fetch(B+'data/infra.json?v=20261106').then(r=>r.json()),fetch(B+'data/umd-points.json?v=20261106').then(r=>r.json())])
  .then(([cos,r,inf,u])=>{rows=cos.sort((a,b)=>(b.headcount||0)-(a.headcount||0));rent=r;for(const k of ['clinic','bus','convenience'])infra[k]=inf[k].map(q=>Array.isArray(q)?q:[q.lat,q.lon]).filter(q=>q[0]&&q[1]);u.forEach(([c,um,la,ln])=>{if(!pts.has(c+'|'+um))pts.set(c+'|'+um,[la,ln])});render()})
  .catch(e=>{$('title').textContent='동네를 불러오지 못했어요';console.error(e)});
-</script></body></html>
+</script><script src="/ilteodongne-web/swipe-nav.js" defer></script></body></html>
